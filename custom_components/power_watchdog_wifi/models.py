@@ -1,4 +1,9 @@
-"""Data models for Power Watchdog WiFi."""
+"""Data models for Power Watchdog WiFi.
+
+These dataclasses are intentionally immutable (`frozen=True`) so snapshot
+updates are explicit (`dataclasses.replace`) and easier to reason about in
+coordinator flows and tests.
+"""
 
 from __future__ import annotations
 
@@ -115,6 +120,7 @@ def metadata_from_device_row(
     device: Mapping[str, Any],
 ) -> WatchdogDeviceMetadata:
     """Normalize metadata fields from a device list row."""
+    # Keep identifier order deterministic for diagnostics/tests while deduping.
     cloud_identifiers: list[str] = []
     for key in ("id", "device_no", "gid"):
         value = device.get(key)

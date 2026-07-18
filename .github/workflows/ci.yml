@@ -21,6 +21,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements_test.txt
 
+      # Run local-style hooks in CI so formatting/lint drift is caught early.
       - name: Pre-commit checks
         run: python -m pre_commit run --all-files
 

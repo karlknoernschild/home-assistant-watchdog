@@ -1,4 +1,13 @@
-"""Push coordinator for Power Watchdog WiFi."""
+"""Push coordinator for Power Watchdog WiFi.
+
+This coordinator is the central runtime state machine for the integration.
+It combines multiple concerns in one place so entities can stay thin:
+- telemetry subscription lifecycle and reconnect/backoff behavior
+- timeout-based availability transitions
+- runtime counters for diagnostics
+- periodic metadata refresh
+- derived metric calculation + persistence
+"""
 
 from __future__ import annotations
 
@@ -137,6 +146,8 @@ class WatchdogCoordinator(DataUpdateCoordinator[WatchdogSnapshot]):
         return not self._timed_out
 
     async def _async_listen(self) -> None:
+        # Reconnect with exponential backoff; delay resets whenever a valid
+        # packet is processed.
         delay = WS_RECONNECT_MIN_SECONDS
         while True:
             try:
@@ -157,6 +168,8 @@ class WatchdogCoordinator(DataUpdateCoordinator[WatchdogSnapshot]):
                             reconnect_count += 1
                         last_successful_connect_timestamp = dt_util.utcnow()
                         first_valid_packet = False
+                        # Reconnect is the best moment to refresh metadata;
+                        # cloud-side firmware/connectivity fields can change.
                         await self._async_refresh_device_metadata(force=True)
 
                     if event.telemetry is not None:
@@ -282,6 +295,8 @@ class WatchdogCoordinator(DataUpdateCoordinator[WatchdogSnapshot]):
         if device is None:
             return
 
+        # Metadata refreshes should not discard runtime counters/telemetry, so
+        # we replace only metadata-related fields on the current snapshot.
         metadata = metadata_from_device_row(self.device_no, device)
         self.async_set_updated_data(
             replace(
@@ -365,6 +380,8 @@ class WatchdogCoordinator(DataUpdateCoordinator[WatchdogSnapshot]):
             previous_day = date.fromisoformat(state.day_iso)
             current_day = date.fromisoformat(now_day_iso)
             day_gap = (current_day - previous_day).days
+            # If we miss more than one local day, yesterday is reset because
+            # we cannot reliably reconstruct skipped-day buckets.
             state = WatchdogDerivedEnergyState(
                 day_iso=now_day_iso,
                 day_start_total_energy_kwh=total_energy_kwh,
@@ -372,6 +389,8 @@ class WatchdogCoordinator(DataUpdateCoordinator[WatchdogSnapshot]):
                 yesterday_energy_kwh=state.today_energy_kwh if day_gap == 1 else 0.0,
             )
         elif total_energy_kwh < state.day_start_total_energy_kwh:
+            # Device/cloud counters can reset; re-anchor the daily baseline to
+            # avoid negative derived daily energy.
             state = replace(
                 state,
                 day_start_total_energy_kwh=total_energy_kwh,

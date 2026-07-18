@@ -11,6 +11,7 @@ from pathlib import Path
 
 
 def _load_module(module_name: str, file_path: Path):
+    """Load integration modules directly from file paths for isolated tests."""
     spec = spec_from_file_location(module_name, file_path)
     assert spec is not None
     assert spec.loader is not None
@@ -21,6 +22,7 @@ def _load_module(module_name: str, file_path: Path):
 
 
 def _install_homeassistant_stubs() -> None:
+    """Install minimal Home Assistant modules needed by diagnostics.py."""
     homeassistant = types.ModuleType("homeassistant")
     components = types.ModuleType("homeassistant.components")
     diagnostics_mod = types.ModuleType("homeassistant.components.diagnostics")
@@ -29,6 +31,8 @@ def _install_homeassistant_stubs() -> None:
     device_registry_mod = types.ModuleType("homeassistant.helpers.device_registry")
 
     def async_redact_data(data, redact_keys):
+        # Recursive redaction helper that mirrors HA diagnostics behavior closely
+        # enough for this repository's unit tests.
         if isinstance(data, dict):
             redacted = {}
             for key, value in data.items():
@@ -68,6 +72,7 @@ PACKAGE_NAME = "power_watchdog_wifi"
 
 if PACKAGE_NAME not in sys.modules:
     package = types.ModuleType(PACKAGE_NAME)
+    # Make the package importable from custom_components/<domain>.
     package.__path__ = [  # type: ignore[attr-defined]
         str(ROOT / "custom_components" / PACKAGE_NAME)
     ]

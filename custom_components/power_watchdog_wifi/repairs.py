@@ -60,5 +60,7 @@ def clear_issue(hass: HomeAssistant, entry_id: str, issue_key: str) -> None:
 
 def clear_runtime_issues(hass: HomeAssistant, entry_id: str) -> None:
     """Clear issues that can recover during runtime."""
+    # Mapping issues are intentionally excluded here because they require user
+    # selection/reconfiguration, not transient runtime recovery.
     clear_issue(hass, entry_id, ISSUE_AUTH_FAILED)
     clear_issue(hass, entry_id, ISSUE_CANNOT_CONNECT)

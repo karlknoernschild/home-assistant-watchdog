@@ -2,4 +2,5 @@ line-length = 88
 target-version = "py312"
 
 [lint]
+# Focus on correctness, import hygiene, and modern Python upgrades.
 select = ["E", "F", "I", "B", "UP"]

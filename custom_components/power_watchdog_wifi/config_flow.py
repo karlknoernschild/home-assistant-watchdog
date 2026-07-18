@@ -1,4 +1,10 @@
-"""Config flow for Power Watchdog WiFi."""
+"""Config flow for Power Watchdog WiFi.
+
+Flow shape:
+1) collect credentials and discover device list
+2) auto-create entry for single-device accounts
+3) show selector for multi-device accounts
+"""
 
 from __future__ import annotations
 
@@ -58,6 +64,7 @@ class PowerWatchdogConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             except WatchdogConnectionError:
                 errors["base"] = "cannot_connect"
             else:
+                # Branch early for single-device accounts to keep setup UX short.
                 if not self._devices:
                     errors["base"] = "no_devices"
                 elif len(self._devices) == 1:

@@ -10,6 +10,7 @@ from pathlib import Path
 
 
 def _load_module(module_name: str, file_path: Path):
+    """Load a module from path without importing package side effects."""
     spec = spec_from_file_location(module_name, file_path)
     assert spec is not None
     assert spec.loader is not None
@@ -24,6 +25,7 @@ PACKAGE_NAME = "power_watchdog_wifi"
 
 if PACKAGE_NAME not in sys.modules:
     package = types.ModuleType(PACKAGE_NAME)
+    # Set __path__ so relative imports inside integration modules resolve.
     package.__path__ = [  # type: ignore[attr-defined]
         str(ROOT / "custom_components" / PACKAGE_NAME)
     ]
@@ -67,6 +69,7 @@ def _encode_leg(
 
 
 def _build_packet(command: int = 0x01, payload: bytes | None = None) -> str:
+    """Build a protocol frame with configurable command/payload for tests."""
     if payload is None:
         payload = _encode_leg() + _encode_leg()
     packet = (
@@ -87,6 +90,7 @@ def test_decode_report_decodes_valid_payload() -> None:
 
 
 def test_decode_report_returns_none_for_non_telemetry_command() -> None:
+    # Non-report commands are valid frames but should not produce telemetry.
     decoded = protocol.decode_report(_build_packet(command=0x09))
     assert decoded is None
 

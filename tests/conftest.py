@@ -10,6 +10,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
 CUSTOM_COMPONENTS = ROOT / "custom_components"
+# Ensure `import power_watchdog_wifi` resolves to custom_components during tests.
 if str(CUSTOM_COMPONENTS) not in sys.path:
     sys.path.insert(0, str(CUSTOM_COMPONENTS))
 

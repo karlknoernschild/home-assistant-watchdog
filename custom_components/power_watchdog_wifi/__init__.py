@@ -51,6 +51,9 @@ async def async_setup_entry(
     entry: WatchdogConfigEntry,
 ) -> bool:
     """Set up Power Watchdog WiFi from a config entry."""
+    # Setup is intentionally front-loaded with a device-list check so we can
+    # fail fast on auth/connectivity/mapping problems before entity platforms
+    # are created.
     client = ReadOnlyWatchdogClient(
         async_get_clientsession(hass),
         entry.data[CONF_ACCOUNT],
@@ -85,6 +88,8 @@ async def async_setup_entry(
     coordinator.config_entry = entry
     entry.runtime_data = WatchdogRuntimeData(client, coordinator)
 
+    # Keep stored config-entry metadata aligned with current cloud metadata so
+    # device registry fields stay accurate across reloads/restarts.
     updated_data = {
         **entry.data,
         CONF_DEVICE_ID: metadata.device_id or entry.data.get(CONF_DEVICE_ID),

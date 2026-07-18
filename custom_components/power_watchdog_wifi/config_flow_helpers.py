@@ -18,6 +18,8 @@ def find_device_by_device_no(
     selected_device_no: str,
 ) -> dict[str, Any]:
     """Return the selected device row by device_no."""
+    # This is intentionally strict instead of returning a default/fallback so
+    # config flow issues surface clearly when stale selections occur.
     for item in devices:
         if str(item.get("device_no")) == selected_device_no:
             return item

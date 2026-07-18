@@ -1,4 +1,9 @@
-"""Read-only decoder for Power Watchdog WiFi telemetry packets."""
+"""Read-only decoder for Power Watchdog WiFi telemetry packets.
+
+The decoder validates frame markers and lengths before decoding to typed
+dataclasses. Unknown/non-report command frames are accepted but ignored to keep
+telemetry handling robust against control/heartbeat traffic.
+"""
 
 from __future__ import annotations
 
@@ -23,6 +28,8 @@ class ProtocolError(ValueError):
 
 
 def _decode_leg(raw: bytes) -> LegTelemetry:
+    # Record size is fixed by protocol reverse engineering; a mismatch means
+    # packet corruption, version drift, or a decoder bug.
     if len(raw) != _RECORD_SIZE:
         raise ProtocolError(f"Expected {_RECORD_SIZE} bytes, got {len(raw)}")
 
