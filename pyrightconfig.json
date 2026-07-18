@@ -1,0 +1,11 @@
+{
+  "pythonVersion": "3.12",
+  "typeCheckingMode": "basic",
+  "include": [
+    "power_watchdog_wifi",
+    "tests"
+  ],
+  "exclude": [
+    "test-scripts"
+  ]
+}

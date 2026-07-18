@@ -84,5 +84,19 @@
         "name": "Error present"
       }
     }
+  },
+  "issues": {
+    "auth_failed": {
+      "title": "Authentication failed",
+      "description": "Power Watchdog WiFi credentials are no longer accepted. Update credentials from the integration configuration and reload the integration."
+    },
+    "cannot_connect": {
+      "title": "Cannot connect to Power Watchdog cloud",
+      "description": "The integration cannot currently reach the Power Watchdog cloud service. Check internet connectivity and cloud service availability, then reload the integration."
+    },
+    "device_mapping_unsupported": {
+      "title": "Configured device mapping is unavailable",
+      "description": "The configured device was not returned by the account device list. Verify the selected device in the Power Watchdog app, then reconfigure the integration to select a currently available device."
+    }
   }
 }

@@ -5,8 +5,8 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections import deque
-from dataclasses import replace
 from contextlib import suppress
+from dataclasses import replace
 from datetime import date, datetime, timedelta
 from typing import Any
 
@@ -33,6 +33,11 @@ from .models import (
     WatchdogSnapshot,
     WatchdogTelemetry,
     metadata_from_device_row,
+)
+from .repairs import (
+    clear_runtime_issues,
+    create_auth_failed_issue,
+    create_cannot_connect_issue,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -155,13 +160,16 @@ class WatchdogCoordinator(DataUpdateCoordinator[WatchdogSnapshot]):
                         await self._async_refresh_device_metadata(force=True)
 
                     if event.telemetry is not None:
+                        clear_runtime_issues(self.hass, self.config_entry.entry_id)
                         now = dt_util.utcnow()
                         (
                             derived_today_energy_kwh,
                             derived_yesterday_energy_kwh,
                             derived_rolling_average_power_w,
                         ) = self._update_derived_metrics(event.telemetry, now)
-                        await self._async_maybe_persist_derived_energy_state(force=False)
+                        await self._async_maybe_persist_derived_energy_state(
+                            force=False
+                        )
                         self._timed_out = False
                         self.async_set_updated_data(
                             replace(
@@ -203,11 +211,13 @@ class WatchdogCoordinator(DataUpdateCoordinator[WatchdogSnapshot]):
                 raise
             except WatchdogAuthError:
                 _LOGGER.error("Power Watchdog authentication failed")
+                create_auth_failed_issue(self.hass, self.config_entry.entry_id)
                 self.async_set_update_error(
                     WatchdogAuthError("Authentication failed")
                 )
                 return
             except WatchdogConnectionError as err:
+                create_cannot_connect_issue(self.hass, self.config_entry.entry_id)
                 _LOGGER.warning(
                     "Power Watchdog telemetry disconnected; retrying in %s seconds: %s",
                     delay,
@@ -231,7 +241,8 @@ class WatchdogCoordinator(DataUpdateCoordinator[WatchdogSnapshot]):
             last_telemetry_timestamp = snapshot.last_telemetry_timestamp
             timed_out = (
                 last_telemetry_timestamp is not None
-                and dt_util.utcnow() - last_telemetry_timestamp > self._availability_timeout
+                and dt_util.utcnow() - last_telemetry_timestamp
+                > self._availability_timeout
             )
             if timed_out != self._timed_out:
                 self._timed_out = timed_out
@@ -361,11 +372,17 @@ class WatchdogCoordinator(DataUpdateCoordinator[WatchdogSnapshot]):
                 yesterday_energy_kwh=state.today_energy_kwh if day_gap == 1 else 0.0,
             )
         elif total_energy_kwh < state.day_start_total_energy_kwh:
-            state = replace(state, day_start_total_energy_kwh=total_energy_kwh, today_energy_kwh=0.0)
+            state = replace(
+                state,
+                day_start_total_energy_kwh=total_energy_kwh,
+                today_energy_kwh=0.0,
+            )
         else:
             state = replace(
                 state,
-                today_energy_kwh=max(0.0, total_energy_kwh - state.day_start_total_energy_kwh),
+                today_energy_kwh=max(
+                    0.0, total_energy_kwh - state.day_start_total_energy_kwh
+                ),
             )
         self._derived_energy_state = state
 
