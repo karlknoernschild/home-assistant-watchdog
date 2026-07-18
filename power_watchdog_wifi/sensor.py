@@ -23,7 +23,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from . import WatchdogConfigEntry
 from .entity import WatchdogEntity
-from .models import WatchdogTelemetry
+from .models import WatchdogSnapshot, WatchdogTelemetry
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -176,6 +176,7 @@ class WatchdogSensor(WatchdogEntity, SensorEntity):
     @property
     def native_value(self) -> float | None:
         """Return the sensor value."""
-        if self.coordinator.data is None:
+        snapshot: WatchdogSnapshot = self.coordinator.data
+        if snapshot.latest_telemetry is None:
             return None
-        return self.entity_description.value_fn(self.coordinator.data)
+        return self.entity_description.value_fn(snapshot.latest_telemetry)
