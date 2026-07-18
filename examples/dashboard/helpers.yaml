@@ -1,0 +1,20 @@
+# Add this to configuration.yaml, or merge it into an existing input_select:
+# section. Restart Home Assistant after changing configuration.yaml.
+#
+# Users who prefer UI-managed helpers can instead create an Input select helper
+# named "Graph time range" with the same options and entity ID
+# input_select.graph_time_range.
+
+input_select:
+  graph_time_range:
+    name: Graph time range
+    icon: mdi:chart-timeline-variant
+    options:
+      - 1 Hour
+      - 3 Hours
+      - 6 Hours
+      - 12 Hours
+      - 24 Hours
+      - 3 Days
+      - 7 Days
+    initial: 24 Hours

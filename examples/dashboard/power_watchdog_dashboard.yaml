@@ -1,0 +1,570 @@
+###############################################################################
+# Power Watchdog WiFi example dashboard
+#
+# This example contains no installation-specific device names or entities.
+#
+# Before using it:
+#   1. Install these HACS frontend cards:
+#        - Config Template Card
+#        - ApexCharts Card
+#        - card-mod
+#   2. Create the graph-time helper from helpers.yaml.
+#   3. Replace the generic entity prefix "watchdog" with the entity prefix
+#      Home Assistant assigned to your Power Watchdog device.
+#
+# Example:
+#   sensor.watchdog_l1_voltage
+# becomes:
+#   sensor.my_power_watchdog_l1_voltage
+#
+# The dashboard only includes entities supplied by this integration.
+###############################################################################
+
+type: sections
+max_columns: 2
+title: Power
+path: power
+icon: mdi:lightning-bolt-outline
+sections:
+  - type: grid
+    cards:
+      - type: tile
+        grid_options:
+          columns: full
+          rows: auto
+        entity: sensor.watchdog_frequency
+        name: Watchdog Frequency
+        vertical: true
+        features_position: bottom
+      - type: tile
+        grid_options:
+          columns: full
+          rows: auto
+        entity: sensor.watchdog_total_energy
+        name: Cumulative Energy
+        vertical: true
+        features_position: bottom
+      - type: tile
+        grid_options:
+          columns: full
+          rows: auto
+        entity: sensor.watchdog_total_power
+        name: Total Power
+        vertical: true
+        features_position: bottom
+      - type: tile
+        grid_options:
+          columns: full
+          rows: auto
+        entity: sensor.watchdog_total_current
+        name: Total Current
+        vertical: true
+        features_position: bottom
+      - type: tile
+        grid_options:
+          columns: full
+          rows: auto
+        entity: binary_sensor.watchdog_error_present
+        name: Watchdog Error
+        color: red
+        show_entity_picture: false
+        vertical: true
+        features_position: bottom
+  - type: grid
+    cards:
+      - type: tile
+        grid_options:
+          rows: auto
+        entity: sensor.watchdog_l1_voltage
+        name: L1 Voltage
+        vertical: true
+        features_position: bottom
+      - type: tile
+        grid_options:
+          rows: auto
+        entity: sensor.watchdog_l2_voltage
+        name: L2 Voltage
+        vertical: true
+        features_position: bottom
+      - type: tile
+        grid_options:
+          rows: auto
+        entity: sensor.watchdog_l1_energy
+        name: L1 Energy
+        vertical: true
+        features_position: bottom
+      - type: tile
+        grid_options:
+          rows: auto
+        entity: sensor.watchdog_l2_energy
+        name: L2 Energy
+        vertical: true
+        features_position: bottom
+      - type: tile
+        grid_options:
+          rows: auto
+        entity: sensor.watchdog_l1_power
+        name: L1 Power
+        vertical: true
+        features_position: bottom
+      - type: tile
+        grid_options:
+          rows: auto
+        entity: sensor.watchdog_l2_power
+        name: L2 Power
+        vertical: true
+        features_position: bottom
+      - type: tile
+        grid_options:
+          rows: auto
+        entity: sensor.watchdog_l1_current
+        name: L1 Current
+        vertical: true
+        features_position: bottom
+      - type: tile
+        grid_options:
+          rows: auto
+        entity: sensor.watchdog_l2_current
+        name: L2 Current
+        vertical: true
+        features_position: bottom
+      - type: tile
+        grid_options:
+          rows: auto
+        entity: binary_sensor.watchdog_l1_error_present
+        name: L1 Error
+        color: red
+        show_entity_picture: false
+        vertical: true
+        features_position: bottom
+      - type: tile
+        grid_options:
+          rows: auto
+        entity: binary_sensor.watchdog_l2_error_present
+        name: L2 Error
+        color: red
+        show_entity_picture: false
+        vertical: true
+        features_position: bottom
+  - type: grid
+    cards:
+      - type: entities
+        title: Graph time range
+        entities:
+          - entity: input_select.graph_time_range
+            name: Show last
+        grid_options:
+          columns: full
+    column_span: 2
+  - type: grid
+    cards:
+      - type: custom:config-template-card
+        entities:
+          - input_select.graph_time_range
+        card:
+          type: custom:apexcharts-card
+          graph_span: >-
+            ${({ '1 Hour': '1h', '3 Hours': '3h', '6 Hours': '6h', '12 Hours':
+            '12h', '24 Hours': '24h', '3 Days': '3d', '7 Days': '7d'
+            })[states['input_select.graph_time_range'].state] || '24h'}
+          update_interval: 1min
+          header:
+            show: true
+            title: Voltage
+            show_states: true
+            colorize_states: true
+            standard_format: true
+          yaxis:
+            - min: 110
+              max: 130
+              decimals: 0
+              apex_config:
+                tickAmount: 4
+                title:
+                  text: Volts
+                  style:
+                    fontSize: 11px
+                    fontWeight: 500
+                labels:
+                  formatter: |
+                    EVAL:function(value) {
+                      return value.toFixed(0);
+                    }
+          apex_config:
+            chart:
+              height: 290
+              toolbar:
+                show: false
+              zoom:
+                enabled: false
+              animations:
+                enabled: true
+                easing: easeinout
+                speed: 500
+            grid:
+              show: true
+              borderColor: var(--divider-color)
+              strokeDashArray: 2
+              padding:
+                left: 4
+                right: 10
+                top: 8
+                bottom: 0
+              xaxis:
+                lines:
+                  show: false
+              yaxis:
+                lines:
+                  show: true
+            xaxis:
+              type: datetime
+              axisBorder:
+                show: false
+              axisTicks:
+                show: false
+              labels:
+                show: true
+                datetimeUTC: false
+                hideOverlappingLabels: true
+                rotate: 0
+                style:
+                  fontSize: 11px
+                datetimeFormatter:
+                  year: yyyy
+                  month: MMM yyyy
+                  day: MMM d
+                  hour: h:mm TT
+            tooltip:
+              shared: true
+              intersect: false
+              theme: dark
+              x:
+                format: MMM d, h:mm TT
+              "y":
+                formatter: |
+                  EVAL:function(value) {
+                    return value.toFixed(1) + ' V';
+                  }
+            legend:
+              show: false
+            stroke:
+              curve: smooth
+              width: 3
+              lineCap: round
+            markers:
+              size: 0
+              hover:
+                size: 5
+            dataLabels:
+              enabled: false
+          series:
+            - entity: sensor.watchdog_l1_voltage
+              name: L1
+              color: "#2E8B57"
+              type: line
+              unit: V
+              float_precision: 1
+              extend_to: false
+              show:
+                in_header: true
+                name_in_header: true
+                legend_value: false
+              group_by:
+                duration: 1min
+                func: avg
+            - entity: sensor.watchdog_l2_voltage
+              name: L2
+              color: "#C97A00"
+              type: line
+              unit: V
+              float_precision: 1
+              extend_to: false
+              show:
+                in_header: true
+                name_in_header: true
+                legend_value: false
+              group_by:
+                duration: 1min
+                func: avg
+  - type: grid
+    cards:
+      - type: custom:config-template-card
+        entities:
+          - input_select.graph_time_range
+        card:
+          type: custom:apexcharts-card
+          graph_span: |-
+            ${({
+              '1 Hour': '1h',
+              '3 Hours': '3h',
+              '6 Hours': '6h',
+              '12 Hours': '12h',
+              '24 Hours': '24h',
+              '3 Days': '3d',
+              '7 Days': '7d'
+            })[states['input_select.graph_time_range'].state] || '24h'}
+          update_interval: 1min
+          stacked: true
+          header:
+            show: true
+            title: Current
+            show_states: true
+            colorize_states: true
+            standard_format: true
+          yaxis:
+            - min: 0
+              decimals: 1
+              apex_config:
+                forceNiceScale: true
+                title:
+                  text: Amps
+                  style:
+                    fontSize: 11px
+                    fontWeight: 500
+                labels:
+                  formatter: |
+                    EVAL:function(value) {
+                      return value.toFixed(1);
+                    }
+          apex_config:
+            chart:
+              height: 290
+              toolbar:
+                show: false
+              zoom:
+                enabled: false
+              animations:
+                enabled: true
+                easing: easeinout
+                speed: 500
+            grid:
+              show: true
+              borderColor: var(--divider-color)
+              strokeDashArray: 2
+              padding:
+                left: 4
+                right: 10
+                top: 8
+                bottom: 0
+              xaxis:
+                lines:
+                  show: false
+              yaxis:
+                lines:
+                  show: true
+            xaxis:
+              type: datetime
+              axisBorder:
+                show: false
+              axisTicks:
+                show: false
+              labels:
+                show: true
+                datetimeUTC: false
+                hideOverlappingLabels: true
+                rotate: 0
+                style:
+                  fontSize: 11px
+                datetimeFormatter:
+                  year: yyyy
+                  month: MMM yyyy
+                  day: MMM d
+                  hour: h:mm TT
+            tooltip:
+              shared: true
+              intersect: false
+              theme: dark
+              x:
+                format: MMM d, h:mm TT
+              "y":
+                formatter: |
+                  EVAL:function(value) {
+                    return value.toFixed(1) + ' A';
+                  }
+            legend:
+              show: false
+            stroke:
+              curve: stepline
+              width: 2
+              lineCap: round
+            fill:
+              type: solid
+              opacity: 0.45
+            markers:
+              size: 0
+              hover:
+                size: 5
+            dataLabels:
+              enabled: false
+          series:
+            - entity: sensor.watchdog_l1_current
+              name: L1
+              color: "#2E8B57"
+              type: area
+              unit: A
+              float_precision: 1
+              extend_to: false
+              opacity: 0.45
+              show:
+                in_header: true
+                name_in_header: true
+                legend_value: false
+              group_by:
+                duration: 3min
+                func: avg
+            - entity: sensor.watchdog_l2_current
+              name: L2
+              color: "#C97A00"
+              type: area
+              unit: A
+              float_precision: 1
+              extend_to: false
+              opacity: 0.45
+              show:
+                in_header: true
+                name_in_header: true
+                legend_value: false
+              group_by:
+                duration: 3min
+                func: avg
+  - type: grid
+    cards:
+      - type: custom:config-template-card
+        entities:
+          - input_select.graph_time_range
+        card:
+          type: custom:apexcharts-card
+          graph_span: |-
+            ${({
+              '1 Hour': '1h',
+              '3 Hours': '3h',
+              '6 Hours': '6h',
+              '12 Hours': '12h',
+              '24 Hours': '24h',
+              '3 Days': '3d',
+              '7 Days': '7d'
+            })[states['input_select.graph_time_range'].state] || '24h'}
+          update_interval: 1min
+          header:
+            show: true
+            title: Power
+            show_states: true
+            colorize_states: true
+            standard_format: true
+          yaxis:
+            - min: 0
+              decimals: 0
+              apex_config:
+                forceNiceScale: true
+                title:
+                  text: Watts
+                  style:
+                    fontSize: 11px
+                    fontWeight: 500
+                labels:
+                  formatter: |
+                    EVAL:function(value) {
+                      return value.toFixed(0);
+                    }
+          apex_config:
+            chart:
+              height: 290
+              toolbar:
+                show: false
+              zoom:
+                enabled: false
+              animations:
+                enabled: true
+                easing: easeinout
+                speed: 500
+            grid:
+              show: true
+              borderColor: var(--divider-color)
+              strokeDashArray: 2
+              padding:
+                left: 4
+                right: 10
+                top: 8
+                bottom: 0
+              xaxis:
+                lines:
+                  show: false
+              yaxis:
+                lines:
+                  show: true
+            xaxis:
+              type: datetime
+              axisBorder:
+                show: false
+              axisTicks:
+                show: false
+              labels:
+                show: true
+                datetimeUTC: false
+                hideOverlappingLabels: true
+                rotate: 0
+                style:
+                  fontSize: 11px
+                datetimeFormatter:
+                  year: yyyy
+                  month: MMM yyyy
+                  day: MMM d
+                  hour: h:mm TT
+            tooltip:
+              shared: true
+              intersect: false
+              theme: dark
+              x:
+                format: MMM d, h:mm TT
+              "y":
+                formatter: |
+                  EVAL:function(value) {
+                    return value.toFixed(0) + ' W';
+                  }
+            legend:
+              show: false
+            stroke:
+              curve: stepline
+              width: 2
+              lineCap: round
+            fill:
+              type: solid
+              opacity: 0.45
+            markers:
+              size: 0
+              hover:
+                size: 5
+            dataLabels:
+              enabled: false
+          series:
+            - entity: sensor.watchdog_l1_power
+              name: L1
+              color: "#2E8B57"
+              type: area
+              unit: W
+              float_precision: 0
+              extend_to: false
+              opacity: 0.45
+              show:
+                in_header: true
+                name_in_header: true
+                legend_value: false
+              group_by:
+                duration: 3min
+                func: avg
+            - entity: sensor.watchdog_l2_power
+              name: L2
+              color: "#C97A00"
+              type: area
+              unit: W
+              float_precision: 0
+              extend_to: false
+              opacity: 0.45
+              show:
+                in_header: true
+                name_in_header: true
+                legend_value: false
+              group_by:
+                duration: 3min
+                func: avg
+cards: []
