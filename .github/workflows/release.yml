@@ -1,0 +1,59 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate tag matches manifest version
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          tag_name = os.environ["GITHUB_REF_NAME"]
+          expected_version = tag_name[1:] if tag_name.startswith("v") else tag_name
+          manifest_path = Path("custom_components/power_watchdog_wifi/manifest.json")
+          manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+          manifest_version = manifest.get("version")
+
+          if manifest_version != expected_version:
+              raise SystemExit(
+                  f"Tag '{tag_name}' does not match manifest version '{manifest_version}'."
+              )
+          print(f"Validated tag {tag_name} against manifest version {manifest_version}.")
+          PY
+
+      - name: Validate HACS metadata
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          hacs = json.loads(Path("hacs.json").read_text(encoding="utf-8"))
+          required = {"name", "content_in_root", "domains", "homeassistant"}
+          missing = required.difference(hacs)
+          if missing:
+              raise SystemExit(f"hacs.json missing required keys: {sorted(missing)}")
+          print("hacs.json validation passed.")
+          PY
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true

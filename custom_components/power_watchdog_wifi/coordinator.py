@@ -225,9 +225,7 @@ class WatchdogCoordinator(DataUpdateCoordinator[WatchdogSnapshot]):
             except WatchdogAuthError:
                 _LOGGER.error("Power Watchdog authentication failed")
                 create_auth_failed_issue(self.hass, self.config_entry.entry_id)
-                self.async_set_update_error(
-                    WatchdogAuthError("Authentication failed")
-                )
+                self.async_set_update_error(WatchdogAuthError("Authentication failed"))
                 return
             except WatchdogConnectionError as err:
                 create_cannot_connect_issue(self.hass, self.config_entry.entry_id)

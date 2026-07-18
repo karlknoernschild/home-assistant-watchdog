@@ -17,3 +17,5 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - Manual/HACS verification checklist and staged release recommendation guidance.
 - Repository maturity improvements: MIT license, pre-commit configuration, and
   stricter pytest harness defaults with outbound-network blocking in tests.
+- HACS-ready release automation via tag-driven GitHub release workflow and
+  improved README installation guidance for one-click HACS install/update flow.

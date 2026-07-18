@@ -97,9 +97,7 @@ class PowerWatchdogConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         options = build_device_options(self._devices)
         return self.async_show_form(
             step_id="device",
-            data_schema=vol.Schema(
-                {vol.Required(CONF_DEVICE_NO): vol.In(options)}
-            ),
+            data_schema=vol.Schema({vol.Required(CONF_DEVICE_NO): vol.In(options)}),
         )
 
     async def _create_for_device(self, device: dict[str, Any]) -> FlowResult:

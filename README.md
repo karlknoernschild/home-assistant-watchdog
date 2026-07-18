@@ -16,18 +16,29 @@ The client implements only:
 It does not implement relay control, energy reset, configuration, rename, add,
 delete, share, transfer, or a generic request/command method.
 
-## Installation
+## Installation (recommended: HACS)
 
-1. In Home Assistant, install the **Studio Code Server** app or use the Samba
-   share.
-2. Copy the folder:
-   `custom_components/power_watchdog_wifi`
-   into:
+### Option A: HACS (automatic update discovery)
+
+1. Install HACS in Home Assistant if not already installed.
+2. In HACS, open the menu **⋮ > Custom repositories**.
+3. Add repository URL:
+   `https://github.com/karlknoernschild/home-assistant-watchdog`
+   with category/type **Integration**.
+4. Search for **Power Watchdog WiFi** in HACS and click **Install**.
+5. Restart Home Assistant.
+6. Open **Settings > Devices & services > Add integration**.
+7. Search for **Power Watchdog WiFi** and complete setup.
+
+After install, HACS will detect new tagged releases and surface updates in the
+HACS UI.
+
+### Option B: Manual copy
+
+1. Copy `custom_components/power_watchdog_wifi` into:
    `/config/custom_components/power_watchdog_wifi`
-3. Restart Home Assistant.
-4. Open **Settings > Devices & services > Add integration**.
-5. Search for **Power Watchdog WiFi**.
-6. Enter the email address and password used by the official app.
+2. Restart Home Assistant.
+3. Add integration from **Settings > Devices & services**.
 
 ## Entities
 
