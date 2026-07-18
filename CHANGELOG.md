@@ -11,3 +11,7 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - Coordinator runtime snapshot, timeout availability baseline, diagnostics, binary
   sensors, expanded metadata refresh, and derived energy metrics.
 - CI, lint/type/test scaffolding and HACS metadata.
+- Automated verification coverage for protocol decoding, coordinator reconnect and
+  timeout transitions, diagnostics redaction, and config-flow device-selection
+  behavior.
+- Manual/HACS verification checklist and staged release recommendation guidance.

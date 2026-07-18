@@ -11,6 +11,7 @@ from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import ReadOnlyWatchdogClient, WatchdogAuthError, WatchdogConnectionError
+from .config_flow_helpers import build_device_options, find_device_by_device_no
 from .const import (
     CONF_ACCOUNT,
     CONF_CONNECT_TYPE,
@@ -83,17 +84,10 @@ class PowerWatchdogConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Select one device when the account has multiple."""
         if user_input is not None:
             selected = user_input[CONF_DEVICE_NO]
-            device = next(
-                item
-                for item in self._devices
-                if str(item.get("device_no")) == selected
-            )
+            device = find_device_by_device_no(self._devices, selected)
             return await self._create_for_device(device)
 
-        options = {
-            str(item.get("device_no")): str(item.get("name") or item.get("device_no"))
-            for item in self._devices
-        }
+        options = build_device_options(self._devices)
         return self.async_show_form(
             step_id="device",
             data_schema=vol.Schema(
