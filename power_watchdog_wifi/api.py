@@ -45,6 +45,11 @@ class ReadOnlyWatchdogClient:
         self._password = password
         self._token: str | None = None
 
+    @property
+    def authenticated(self) -> bool:
+        """Return whether a token is currently available."""
+        return self._token is not None
+
     async def async_login(self) -> None:
         """Authenticate using the same read operation as the official app."""
         params = {

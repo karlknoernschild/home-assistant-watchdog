@@ -11,8 +11,20 @@ from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import ReadOnlyWatchdogClient, WatchdogAuthError, WatchdogConnectionError
-from .const import CONF_ACCOUNT, CONF_DEVICE_NO, PLATFORMS
+from .const import (
+    CONF_ACCOUNT,
+    CONF_CONNECT_TYPE,
+    CONF_DEVICE_ID,
+    CONF_DEVICE_NAME,
+    CONF_DEVICE_NO,
+    CONF_FIRMWARE,
+    CONF_MCU_FIRMWARE,
+    CONF_START_FROM,
+    CONF_SOCKET_STATE,
+    PLATFORMS,
+)
 from .coordinator import WatchdogCoordinator
+from .models import metadata_from_device_row
 
 
 @dataclass(slots=True)
@@ -44,12 +56,34 @@ async def async_setup_entry(
         raise ConfigEntryNotReady from err
 
     device_no = entry.data[CONF_DEVICE_NO]
-    if not any(str(device.get("device_no")) == device_no for device in devices):
+    device = next(
+        (
+            candidate
+            for candidate in devices
+            if str(candidate.get("device_no")) == device_no
+        ),
+        None,
+    )
+    if device is None:
         raise ConfigEntryNotReady("Configured Watchdog was not returned by the account")
 
-    coordinator = WatchdogCoordinator(hass, client, device_no)
+    metadata = metadata_from_device_row(device_no, device)
+    coordinator = WatchdogCoordinator(hass, client, device_no, metadata)
     coordinator.config_entry = entry
     entry.runtime_data = WatchdogRuntimeData(client, coordinator)
+
+    updated_data = {
+        **entry.data,
+        CONF_DEVICE_ID: metadata.device_id or entry.data.get(CONF_DEVICE_ID),
+        CONF_DEVICE_NAME: metadata.name or entry.data.get(CONF_DEVICE_NAME),
+        CONF_FIRMWARE: metadata.firmware or entry.data.get(CONF_FIRMWARE),
+        CONF_MCU_FIRMWARE: metadata.mcu_firmware or entry.data.get(CONF_MCU_FIRMWARE),
+        CONF_CONNECT_TYPE: metadata.connect_type or entry.data.get(CONF_CONNECT_TYPE),
+        CONF_SOCKET_STATE: metadata.socket_state or entry.data.get(CONF_SOCKET_STATE),
+        CONF_START_FROM: metadata.start_from or entry.data.get(CONF_START_FROM),
+    }
+    if updated_data != entry.data:
+        hass.config_entries.async_update_entry(entry, data=updated_data)
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     await coordinator.async_start()

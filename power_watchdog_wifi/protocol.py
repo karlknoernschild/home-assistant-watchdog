@@ -10,6 +10,12 @@ _IDENTIFIER = bytes.fromhex("24797740")
 _TAIL = bytes.fromhex("7121")
 _REPORT_COMMAND = 0x01
 _RECORD_SIZE = 34
+PROTOCOL_MARKERS = {
+    "identifier_hex": _IDENTIFIER.hex(),
+    "tail_hex": _TAIL.hex(),
+    "report_command": _REPORT_COMMAND,
+    "record_size": _RECORD_SIZE,
+}
 
 
 class ProtocolError(ValueError):
