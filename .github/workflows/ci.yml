@@ -19,7 +19,10 @@ jobs:
       - name: Install tooling
         run: |
           python -m pip install --upgrade pip
-          pip install pytest ruff
+          pip install -r requirements_test.txt
+
+      - name: Pre-commit checks
+        run: python -m pre_commit run --all-files
 
       - name: Compile integration
         run: python -m compileall custom_components/power_watchdog_wifi
