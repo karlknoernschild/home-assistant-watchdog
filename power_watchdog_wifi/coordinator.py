@@ -4,23 +4,36 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections import deque
 from dataclasses import replace
 from contextlib import suppress
-from datetime import timedelta
+from datetime import date, datetime, timedelta
+from typing import Any
 
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
 
 from .api import ReadOnlyWatchdogClient, WatchdogAuthError, WatchdogConnectionError
 from .const import (
+    DERIVED_ENERGY_STATE_PERSIST_INTERVAL_SECONDS,
+    DERIVED_ENERGY_STORAGE_KEY,
+    DERIVED_ENERGY_STORAGE_VERSION,
+    DERIVED_ROLLING_POWER_WINDOW_SECONDS,
     DEVICE_METADATA_REFRESH_INTERVAL_SECONDS,
     DOMAIN,
     TELEMETRY_AVAILABILITY_TIMEOUT_SECONDS,
     WS_RECONNECT_MAX_SECONDS,
     WS_RECONNECT_MIN_SECONDS,
 )
-from .models import WatchdogDeviceMetadata, WatchdogSnapshot, metadata_from_device_row
+from .models import (
+    WatchdogDerivedEnergyState,
+    WatchdogDeviceMetadata,
+    WatchdogSnapshot,
+    WatchdogTelemetry,
+    metadata_from_device_row,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -47,6 +60,20 @@ class WatchdogCoordinator(DataUpdateCoordinator[WatchdogSnapshot]):
         self._device_refresh_interval = timedelta(
             seconds=DEVICE_METADATA_REFRESH_INTERVAL_SECONDS
         )
+        self._derived_rolling_power_window = timedelta(
+            seconds=DERIVED_ROLLING_POWER_WINDOW_SECONDS
+        )
+        self._derived_state_persist_interval = timedelta(
+            seconds=DERIVED_ENERGY_STATE_PERSIST_INTERVAL_SECONDS
+        )
+        self._derived_energy_store: Store[dict[str, Any]] = Store(
+            hass,
+            DERIVED_ENERGY_STORAGE_VERSION,
+            f"{DERIVED_ENERGY_STORAGE_KEY}_{device_no}",
+        )
+        self._derived_energy_state: WatchdogDerivedEnergyState | None = None
+        self._last_derived_state_persist_timestamp: datetime | None = None
+        self._rolling_power_values: deque[tuple[datetime, float]] = deque()
         self._timed_out = False
         now = dt_util.utcnow()
         self.data = WatchdogSnapshot(
@@ -58,6 +85,7 @@ class WatchdogCoordinator(DataUpdateCoordinator[WatchdogSnapshot]):
 
     async def async_start(self) -> None:
         """Start the push listener."""
+        await self._async_load_derived_energy_state()
         if self._task is None:
             self._task = self.config_entry.async_create_background_task(
                 self.hass,
@@ -94,6 +122,7 @@ class WatchdogCoordinator(DataUpdateCoordinator[WatchdogSnapshot]):
             with suppress(asyncio.CancelledError):
                 await self._metadata_task
             self._metadata_task = None
+        await self._async_maybe_persist_derived_energy_state(force=True)
 
     @property
     def available(self) -> bool:
@@ -126,18 +155,32 @@ class WatchdogCoordinator(DataUpdateCoordinator[WatchdogSnapshot]):
                         await self._async_refresh_device_metadata(force=True)
 
                     if event.telemetry is not None:
+                        now = dt_util.utcnow()
+                        (
+                            derived_today_energy_kwh,
+                            derived_yesterday_energy_kwh,
+                            derived_rolling_average_power_w,
+                        ) = self._update_derived_metrics(event.telemetry, now)
+                        await self._async_maybe_persist_derived_energy_state(force=False)
                         self._timed_out = False
                         self.async_set_updated_data(
                             replace(
                                 self.data,
                                 latest_telemetry=event.telemetry,
-                                last_telemetry_timestamp=dt_util.utcnow(),
+                                last_telemetry_timestamp=now,
                                 reconnect_count=reconnect_count,
                                 decode_error_count=decode_error_count,
                                 packet_count=packet_count,
                                 last_connection_error=None,
                                 last_successful_connect_timestamp=(
                                     last_successful_connect_timestamp
+                                ),
+                                derived_today_energy_kwh=derived_today_energy_kwh,
+                                derived_yesterday_energy_kwh=(
+                                    derived_yesterday_energy_kwh
+                                ),
+                                derived_rolling_average_power_w=(
+                                    derived_rolling_average_power_w
                                 ),
                             )
                         )
@@ -235,4 +278,107 @@ class WatchdogCoordinator(DataUpdateCoordinator[WatchdogSnapshot]):
                 device_metadata=metadata,
                 last_device_refresh_timestamp=dt_util.utcnow(),
             )
+        )
+
+    async def _async_load_derived_energy_state(self) -> None:
+        """Load persisted derived daily energy state."""
+        stored = await self._derived_energy_store.async_load()
+        if not isinstance(stored, dict):
+            return
+        try:
+            day_iso = str(stored["day_iso"])
+            day_start_total_energy_kwh = float(stored["day_start_total_energy_kwh"])
+            today_energy_kwh = float(stored["today_energy_kwh"])
+            yesterday_energy_kwh = float(stored["yesterday_energy_kwh"])
+            date.fromisoformat(day_iso)
+        except (KeyError, TypeError, ValueError):
+            _LOGGER.warning("Invalid persisted derived energy state; ignoring")
+            return
+
+        self._derived_energy_state = WatchdogDerivedEnergyState(
+            day_iso=day_iso,
+            day_start_total_energy_kwh=day_start_total_energy_kwh,
+            today_energy_kwh=max(0.0, today_energy_kwh),
+            yesterday_energy_kwh=max(0.0, yesterday_energy_kwh),
+        )
+        self.data = replace(
+            self.data,
+            derived_today_energy_kwh=self._derived_energy_state.today_energy_kwh,
+            derived_yesterday_energy_kwh=self._derived_energy_state.yesterday_energy_kwh,
+        )
+
+    async def _async_maybe_persist_derived_energy_state(self, force: bool) -> None:
+        """Persist derived energy state on interval or forced shutdown."""
+        if self._derived_energy_state is None:
+            return
+
+        now = dt_util.utcnow()
+        if not force and self._last_derived_state_persist_timestamp is not None:
+            if (
+                now - self._last_derived_state_persist_timestamp
+                < self._derived_state_persist_interval
+            ):
+                return
+
+        await self._derived_energy_store.async_save(
+            {
+                "day_iso": self._derived_energy_state.day_iso,
+                "day_start_total_energy_kwh": (
+                    self._derived_energy_state.day_start_total_energy_kwh
+                ),
+                "today_energy_kwh": self._derived_energy_state.today_energy_kwh,
+                "yesterday_energy_kwh": self._derived_energy_state.yesterday_energy_kwh,
+            }
+        )
+        self._last_derived_state_persist_timestamp = now
+
+    def _update_derived_metrics(
+        self,
+        telemetry: WatchdogTelemetry,
+        now_utc: datetime,
+    ) -> tuple[float, float, float]:
+        """Update derived rolling power and day-bucket energy metrics."""
+        total_energy_kwh = telemetry.total_energy_kwh
+        total_power_w = telemetry.total_power_w
+        now_day_iso = dt_util.as_local(now_utc).date().isoformat()
+
+        state = self._derived_energy_state
+        if state is None:
+            state = WatchdogDerivedEnergyState(
+                day_iso=now_day_iso,
+                day_start_total_energy_kwh=total_energy_kwh,
+                today_energy_kwh=0.0,
+                yesterday_energy_kwh=0.0,
+            )
+        elif now_day_iso != state.day_iso:
+            previous_day = date.fromisoformat(state.day_iso)
+            current_day = date.fromisoformat(now_day_iso)
+            day_gap = (current_day - previous_day).days
+            state = WatchdogDerivedEnergyState(
+                day_iso=now_day_iso,
+                day_start_total_energy_kwh=total_energy_kwh,
+                today_energy_kwh=0.0,
+                yesterday_energy_kwh=state.today_energy_kwh if day_gap == 1 else 0.0,
+            )
+        elif total_energy_kwh < state.day_start_total_energy_kwh:
+            state = replace(state, day_start_total_energy_kwh=total_energy_kwh, today_energy_kwh=0.0)
+        else:
+            state = replace(
+                state,
+                today_energy_kwh=max(0.0, total_energy_kwh - state.day_start_total_energy_kwh),
+            )
+        self._derived_energy_state = state
+
+        self._rolling_power_values.append((now_utc, total_power_w))
+        cutoff = now_utc - self._derived_rolling_power_window
+        while self._rolling_power_values and self._rolling_power_values[0][0] < cutoff:
+            self._rolling_power_values.popleft()
+        rolling_average_power_w = sum(
+            value for _, value in self._rolling_power_values
+        ) / len(self._rolling_power_values)
+
+        return (
+            state.today_energy_kwh,
+            state.yesterday_energy_kwh,
+            rolling_average_power_w,
         )

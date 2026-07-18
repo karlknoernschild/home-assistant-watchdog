@@ -57,6 +57,12 @@ def _snapshot_to_dict(snapshot) -> dict[str, Any]:
             if snapshot.last_device_refresh_timestamp is not None
             else None
         ),
+        "native_today_energy_available": snapshot.native_today_energy_available,
+        "native_yesterday_energy_available": snapshot.native_yesterday_energy_available,
+        "native_peak_demand_available": snapshot.native_peak_demand_available,
+        "derived_today_energy_kwh": snapshot.derived_today_energy_kwh,
+        "derived_yesterday_energy_kwh": snapshot.derived_yesterday_energy_kwh,
+        "derived_rolling_average_power_w": snapshot.derived_rolling_average_power_w,
     }
 
 
@@ -73,6 +79,14 @@ def _build_diagnostics_payload(entry: WatchdogConfigEntry) -> dict[str, Any]:
         "runtime": {
             "snapshot": _snapshot_to_dict(runtime.coordinator.data),
             "authenticated": runtime.client.authenticated,
+        },
+        "energy_source_availability": {
+            "native_today_energy": False,
+            "native_yesterday_energy": False,
+            "native_peak_demand": False,
+            "derived_metrics_enabled": True,
+            "day_rollover_rule": "At local day boundary, today's derived energy rolls into yesterday and today resets to 0 kWh",
+            "restart_restore_strategy": "Daily derived buckets are restored from persisted state; rolling-average power resumes from new runtime samples",
         },
         "protocol_markers": PROTOCOL_MARKERS,
     }

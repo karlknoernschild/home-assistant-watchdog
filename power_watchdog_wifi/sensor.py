@@ -23,14 +23,14 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from . import WatchdogConfigEntry
 from .entity import WatchdogEntity
-from .models import WatchdogSnapshot, WatchdogTelemetry
+from .models import WatchdogSnapshot
 
 
 @dataclass(frozen=True, kw_only=True)
 class WatchdogSensorDescription(SensorEntityDescription):
     """Describe a Watchdog sensor."""
 
-    value_fn: Callable[[WatchdogTelemetry], float]
+    value_fn: Callable[[WatchdogSnapshot], float | None]
 
 
 SENSORS: tuple[WatchdogSensorDescription, ...] = (
@@ -41,7 +41,9 @@ SENSORS: tuple[WatchdogSensorDescription, ...] = (
         device_class=SensorDeviceClass.VOLTAGE,
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=1,
-        value_fn=lambda data: data.leg1.voltage_v,
+        value_fn=lambda snapshot: snapshot.latest_telemetry.leg1.voltage_v
+        if snapshot.latest_telemetry is not None
+        else None,
     ),
     WatchdogSensorDescription(
         key="l2_voltage",
@@ -50,7 +52,9 @@ SENSORS: tuple[WatchdogSensorDescription, ...] = (
         device_class=SensorDeviceClass.VOLTAGE,
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=1,
-        value_fn=lambda data: data.leg2.voltage_v,
+        value_fn=lambda snapshot: snapshot.latest_telemetry.leg2.voltage_v
+        if snapshot.latest_telemetry is not None
+        else None,
     ),
     WatchdogSensorDescription(
         key="l1_current",
@@ -59,7 +63,9 @@ SENSORS: tuple[WatchdogSensorDescription, ...] = (
         device_class=SensorDeviceClass.CURRENT,
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=2,
-        value_fn=lambda data: data.leg1.current_a,
+        value_fn=lambda snapshot: snapshot.latest_telemetry.leg1.current_a
+        if snapshot.latest_telemetry is not None
+        else None,
     ),
     WatchdogSensorDescription(
         key="l2_current",
@@ -68,7 +74,9 @@ SENSORS: tuple[WatchdogSensorDescription, ...] = (
         device_class=SensorDeviceClass.CURRENT,
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=2,
-        value_fn=lambda data: data.leg2.current_a,
+        value_fn=lambda snapshot: snapshot.latest_telemetry.leg2.current_a
+        if snapshot.latest_telemetry is not None
+        else None,
     ),
     WatchdogSensorDescription(
         key="total_current",
@@ -77,7 +85,9 @@ SENSORS: tuple[WatchdogSensorDescription, ...] = (
         device_class=SensorDeviceClass.CURRENT,
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=2,
-        value_fn=lambda data: data.total_current_a,
+        value_fn=lambda snapshot: snapshot.latest_telemetry.total_current_a
+        if snapshot.latest_telemetry is not None
+        else None,
     ),
     WatchdogSensorDescription(
         key="l1_power",
@@ -86,7 +96,9 @@ SENSORS: tuple[WatchdogSensorDescription, ...] = (
         device_class=SensorDeviceClass.POWER,
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=0,
-        value_fn=lambda data: data.leg1.power_w,
+        value_fn=lambda snapshot: snapshot.latest_telemetry.leg1.power_w
+        if snapshot.latest_telemetry is not None
+        else None,
     ),
     WatchdogSensorDescription(
         key="l2_power",
@@ -95,7 +107,9 @@ SENSORS: tuple[WatchdogSensorDescription, ...] = (
         device_class=SensorDeviceClass.POWER,
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=0,
-        value_fn=lambda data: data.leg2.power_w,
+        value_fn=lambda snapshot: snapshot.latest_telemetry.leg2.power_w
+        if snapshot.latest_telemetry is not None
+        else None,
     ),
     WatchdogSensorDescription(
         key="total_power",
@@ -104,7 +118,9 @@ SENSORS: tuple[WatchdogSensorDescription, ...] = (
         device_class=SensorDeviceClass.POWER,
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=0,
-        value_fn=lambda data: data.total_power_w,
+        value_fn=lambda snapshot: snapshot.latest_telemetry.total_power_w
+        if snapshot.latest_telemetry is not None
+        else None,
     ),
     WatchdogSensorDescription(
         key="l1_energy",
@@ -113,7 +129,9 @@ SENSORS: tuple[WatchdogSensorDescription, ...] = (
         device_class=SensorDeviceClass.ENERGY,
         state_class=SensorStateClass.TOTAL_INCREASING,
         suggested_display_precision=2,
-        value_fn=lambda data: data.leg1.energy_kwh,
+        value_fn=lambda snapshot: snapshot.latest_telemetry.leg1.energy_kwh
+        if snapshot.latest_telemetry is not None
+        else None,
     ),
     WatchdogSensorDescription(
         key="l2_energy",
@@ -122,7 +140,9 @@ SENSORS: tuple[WatchdogSensorDescription, ...] = (
         device_class=SensorDeviceClass.ENERGY,
         state_class=SensorStateClass.TOTAL_INCREASING,
         suggested_display_precision=2,
-        value_fn=lambda data: data.leg2.energy_kwh,
+        value_fn=lambda snapshot: snapshot.latest_telemetry.leg2.energy_kwh
+        if snapshot.latest_telemetry is not None
+        else None,
     ),
     WatchdogSensorDescription(
         key="total_energy",
@@ -131,7 +151,9 @@ SENSORS: tuple[WatchdogSensorDescription, ...] = (
         device_class=SensorDeviceClass.ENERGY,
         state_class=SensorStateClass.TOTAL_INCREASING,
         suggested_display_precision=2,
-        value_fn=lambda data: data.total_energy_kwh,
+        value_fn=lambda snapshot: snapshot.latest_telemetry.total_energy_kwh
+        if snapshot.latest_telemetry is not None
+        else None,
     ),
     WatchdogSensorDescription(
         key="frequency",
@@ -140,7 +162,36 @@ SENSORS: tuple[WatchdogSensorDescription, ...] = (
         device_class=SensorDeviceClass.FREQUENCY,
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=2,
-        value_fn=lambda data: data.frequency_hz,
+        value_fn=lambda snapshot: snapshot.latest_telemetry.frequency_hz
+        if snapshot.latest_telemetry is not None
+        else None,
+    ),
+    WatchdogSensorDescription(
+        key="derived_rolling_average_power",
+        translation_key="derived_rolling_average_power",
+        native_unit_of_measurement=UnitOfPower.WATT,
+        device_class=SensorDeviceClass.POWER,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=0,
+        value_fn=lambda snapshot: snapshot.derived_rolling_average_power_w,
+    ),
+    WatchdogSensorDescription(
+        key="derived_today_energy",
+        translation_key="derived_today_energy",
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+        device_class=SensorDeviceClass.ENERGY,
+        state_class=SensorStateClass.TOTAL,
+        suggested_display_precision=2,
+        value_fn=lambda snapshot: snapshot.derived_today_energy_kwh,
+    ),
+    WatchdogSensorDescription(
+        key="derived_yesterday_energy",
+        translation_key="derived_yesterday_energy",
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+        device_class=SensorDeviceClass.ENERGY,
+        state_class=SensorStateClass.TOTAL,
+        suggested_display_precision=2,
+        value_fn=lambda snapshot: snapshot.derived_yesterday_energy_kwh,
     ),
 )
 
@@ -177,6 +228,4 @@ class WatchdogSensor(WatchdogEntity, SensorEntity):
     def native_value(self) -> float | None:
         """Return the sensor value."""
         snapshot: WatchdogSnapshot = self.coordinator.data
-        if snapshot.latest_telemetry is None:
-            return None
-        return self.entity_description.value_fn(snapshot.latest_telemetry)
+        return self.entity_description.value_fn(snapshot)

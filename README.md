@@ -42,12 +42,20 @@ delete, share, transfer, or a generic request/command method.
 - L1 error present
 - L2 error present
 - Error present (aggregate)
+- Derived rolling average power (5-minute window)
+- Derived today energy (daily delta from total energy)
+- Derived yesterday energy (previous local-day bucket)
 
 ## Diagnostics
 
 Diagnostics are available from Home Assistant and include coordinator runtime
 counters, protocol markers, and normalized device metadata with recursive
 redaction for sensitive account, token, and device identifier fields.
+
+Native today/yesterday/peak-demand energy fields are not currently provided by
+the decoded protocol path, so those metrics are exposed as derived values.
+Derived daily buckets roll at the local day boundary and are persisted across
+restart.
 
 ## Data path
 

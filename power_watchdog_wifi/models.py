@@ -85,6 +85,22 @@ class WatchdogSnapshot:
     last_successful_connect_timestamp: datetime | None = None
     device_metadata: WatchdogDeviceMetadata | None = None
     last_device_refresh_timestamp: datetime | None = None
+    native_today_energy_available: bool = False
+    native_yesterday_energy_available: bool = False
+    native_peak_demand_available: bool = False
+    derived_today_energy_kwh: float | None = None
+    derived_yesterday_energy_kwh: float | None = None
+    derived_rolling_average_power_w: float | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class WatchdogDerivedEnergyState:
+    """Persisted state for derived daily energy counters."""
+
+    day_iso: str
+    day_start_total_energy_kwh: float
+    today_energy_kwh: float
+    yesterday_energy_kwh: float
 
 
 def _optional_string(value: Any) -> str | None:

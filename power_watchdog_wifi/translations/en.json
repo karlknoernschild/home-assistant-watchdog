@@ -62,6 +62,15 @@
       },
       "frequency": {
         "name": "Frequency"
+      },
+      "derived_rolling_average_power": {
+        "name": "Derived rolling average power"
+      },
+      "derived_today_energy": {
+        "name": "Derived today energy"
+      },
+      "derived_yesterday_energy": {
+        "name": "Derived yesterday energy"
       }
     },
     "binary_sensor": {
