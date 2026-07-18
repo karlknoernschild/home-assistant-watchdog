@@ -103,28 +103,46 @@ class ReleaseManager:
             with open(self.changelog_path, "r") as f:
                 content = f.read()
 
-            # Check if Unreleased section exists
-            if "## Unreleased" not in content:
+            # Find the Unreleased heading and its body.
+            unreleased_match = re.search(r"^## Unreleased\s*$", content, flags=re.MULTILINE)
+            if not unreleased_match:
                 print("❌ No 'Unreleased' section found in CHANGELOG.md")
                 return False
 
-            # Replace ## Unreleased with ## [X.Y.Z] - YYYY-MM-DD
-            date_str = datetime.now().strftime("%Y-%m-%d")
-            updated_content = content.replace(
-                "## Unreleased",
-                f"## [{self.version}] - {date_str}\n\n## Unreleased"
+            unreleased_start = unreleased_match.start()
+            unreleased_body_start = unreleased_match.end()
+
+            # Find the next top-level section after Unreleased.
+            next_section_match = re.search(
+                r"^## ",
+                content[unreleased_body_start:],
+                flags=re.MULTILINE,
             )
 
-            # Add a blank Unreleased section if it doesn't exist after our replacement
-            if "## Unreleased\n" not in updated_content:
-                lines = updated_content.split("\n")
-                for i, line in enumerate(lines):
-                    if line.startswith(f"## [{self.version}]"):
-                        # Insert blank Unreleased section after the new version header
-                        lines.insert(i + 1, "")
-                        lines.insert(i + 2, "No changes yet.")
-                        break
-                updated_content = "\n".join(lines)
+            if next_section_match:
+                next_section_start = unreleased_body_start + next_section_match.start()
+                unreleased_body = content[unreleased_body_start:next_section_start]
+                rest_of_changelog = content[next_section_start:]
+            else:
+                unreleased_body = content[unreleased_body_start:]
+                rest_of_changelog = ""
+
+            # Keep Unreleased at the top, then add the new version section below it.
+            date_str = datetime.now().strftime("%Y-%m-%d")
+            unreleased_body = unreleased_body.strip("\n")
+
+            updated_content = content[:unreleased_start]
+            updated_content += "## Unreleased\n\n"
+            updated_content += f"## [{self.version}] - {date_str}\n"
+
+            if unreleased_body:
+                updated_content += f"\n{unreleased_body}\n"
+            else:
+                updated_content += "\n"
+
+            rest_of_changelog = rest_of_changelog.lstrip("\n")
+            if rest_of_changelog:
+                updated_content += f"\n{rest_of_changelog}"
 
             with open(self.changelog_path, "w") as f:
                 f.write(updated_content)
