@@ -38,3 +38,8 @@ class WatchdogEntity(CoordinatorEntity[WatchdogCoordinator]):
             sw_version=entry.data.get(CONF_FIRMWARE),
             hw_version=entry.data.get(CONF_MCU_FIRMWARE),
         )
+
+    @property
+    def available(self) -> bool:
+        """Return entity availability."""
+        return super().available and self.coordinator.available

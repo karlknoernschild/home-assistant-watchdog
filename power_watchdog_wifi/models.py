@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 
 
 @dataclass(frozen=True, slots=True)
@@ -44,3 +45,24 @@ class WatchdogTelemetry:
     def frequency_hz(self) -> float:
         """Return line frequency."""
         return self.leg1.frequency_hz
+
+
+@dataclass(frozen=True, slots=True)
+class WatchdogTelemetryEvent:
+    """One decoded telemetry packet event."""
+
+    telemetry: WatchdogTelemetry | None
+    decode_error: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class WatchdogSnapshot:
+    """Coordinator runtime snapshot."""
+
+    latest_telemetry: WatchdogTelemetry | None = None
+    last_telemetry_timestamp: datetime | None = None
+    reconnect_count: int = 0
+    decode_error_count: int = 0
+    packet_count: int = 0
+    last_connection_error: str | None = None
+    last_successful_connect_timestamp: datetime | None = None

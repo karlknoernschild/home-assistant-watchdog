@@ -11,7 +11,7 @@ from typing import Any
 from aiohttp import ClientError, ClientSession, ClientTimeout, WSMsgType
 
 from .const import API_BASE_URL, APP_DEVICE, APP_VERSION, WS_URL
-from .models import WatchdogTelemetry
+from .models import WatchdogTelemetryEvent
 from .protocol import ProtocolError, decode_report
 
 
@@ -103,7 +103,7 @@ class ReadOnlyWatchdogClient:
     async def async_telemetry(
         self,
         device_no: str,
-    ) -> AsyncIterator[WatchdogTelemetry]:
+    ) -> AsyncIterator[WatchdogTelemetryEvent]:
         """Yield live telemetry from a read-only cloud subscription."""
         if not self._token:
             await self.async_login()
@@ -154,9 +154,10 @@ class ReadOnlyWatchdogClient:
                         try:
                             decoded = decode_report(packet)
                         except ProtocolError:
+                            yield WatchdogTelemetryEvent(telemetry=None, decode_error=True)
                             continue
                         if decoded is not None:
-                            yield decoded
+                            yield WatchdogTelemetryEvent(telemetry=decoded)
 
                     elif message.type in {
                         WSMsgType.CLOSED,
