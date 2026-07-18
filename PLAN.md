@@ -64,18 +64,18 @@ Second release: energy enhancements + broader quality-scale items.
 **Relevant files**
 - c:/Users/karl/Documents/GitHub/home-assistant-watchdog/plan.prompt.md - source draft to supersede with this execution-ready plan.
 - c:/Users/karl/Documents/GitHub/home-assistant-watchdog/summary.md - authoritative product intent and next-step scope.
-- c:/Users/karl/Documents/GitHub/home-assistant-watchdog/power_watchdog_wifi/coordinator.py - availability timeout, reconnect lifecycle, runtime counters.
-- c:/Users/karl/Documents/GitHub/home-assistant-watchdog/power_watchdog_wifi/models.py - telemetry/snapshot data structures.
-- c:/Users/karl/Documents/GitHub/home-assistant-watchdog/power_watchdog_wifi/protocol.py - decode fields and mapping confidence boundaries.
-- c:/Users/karl/Documents/GitHub/home-assistant-watchdog/power_watchdog_wifi/api.py - read-only telemetry stream and metadata refresh hooks.
-- c:/Users/karl/Documents/GitHub/home-assistant-watchdog/power_watchdog_wifi/const.py - platform and timeout constants.
-- c:/Users/karl/Documents/GitHub/home-assistant-watchdog/power_watchdog_wifi/__init__.py - platform registration and lifecycle wiring.
-- c:/Users/karl/Documents/GitHub/home-assistant-watchdog/power_watchdog_wifi/entity.py - shared entity availability/device-info behavior.
-- c:/Users/karl/Documents/GitHub/home-assistant-watchdog/power_watchdog_wifi/sensor.py - compatibility baseline for existing sensors and derived additions.
-- c:/Users/karl/Documents/GitHub/home-assistant-watchdog/power_watchdog_wifi/config_flow.py - optional timeout/options evolution and validation.
-- c:/Users/karl/Documents/GitHub/home-assistant-watchdog/power_watchdog_wifi/manifest.json - placeholder metadata replacement.
-- c:/Users/karl/Documents/GitHub/home-assistant-watchdog/power_watchdog_wifi/strings.json - new option/error/entity labels.
-- c:/Users/karl/Documents/GitHub/home-assistant-watchdog/power_watchdog_wifi/translations/en.json - synchronized translation coverage.
+- c:/Users/karl/Documents/GitHub/home-assistant-watchdog/custom_components/power_watchdog_wifi/coordinator.py - availability timeout, reconnect lifecycle, runtime counters.
+- c:/Users/karl/Documents/GitHub/home-assistant-watchdog/custom_components/power_watchdog_wifi/models.py - telemetry/snapshot data structures.
+- c:/Users/karl/Documents/GitHub/home-assistant-watchdog/custom_components/power_watchdog_wifi/protocol.py - decode fields and mapping confidence boundaries.
+- c:/Users/karl/Documents/GitHub/home-assistant-watchdog/custom_components/power_watchdog_wifi/api.py - read-only telemetry stream and metadata refresh hooks.
+- c:/Users/karl/Documents/GitHub/home-assistant-watchdog/custom_components/power_watchdog_wifi/const.py - platform and timeout constants.
+- c:/Users/karl/Documents/GitHub/home-assistant-watchdog/custom_components/power_watchdog_wifi/__init__.py - platform registration and lifecycle wiring.
+- c:/Users/karl/Documents/GitHub/home-assistant-watchdog/custom_components/power_watchdog_wifi/entity.py - shared entity availability/device-info behavior.
+- c:/Users/karl/Documents/GitHub/home-assistant-watchdog/custom_components/power_watchdog_wifi/sensor.py - compatibility baseline for existing sensors and derived additions.
+- c:/Users/karl/Documents/GitHub/home-assistant-watchdog/custom_components/power_watchdog_wifi/config_flow.py - optional timeout/options evolution and validation.
+- c:/Users/karl/Documents/GitHub/home-assistant-watchdog/custom_components/power_watchdog_wifi/manifest.json - placeholder metadata replacement.
+- c:/Users/karl/Documents/GitHub/home-assistant-watchdog/custom_components/power_watchdog_wifi/strings.json - new option/error/entity labels.
+- c:/Users/karl/Documents/GitHub/home-assistant-watchdog/custom_components/power_watchdog_wifi/translations/en.json - synchronized translation coverage.
 
 **Verification**
 1. Confirm every referenced file exists in this workspace.

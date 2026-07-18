@@ -68,7 +68,9 @@ PACKAGE_NAME = "power_watchdog_wifi"
 
 if PACKAGE_NAME not in sys.modules:
     package = types.ModuleType(PACKAGE_NAME)
-    package.__path__ = [str(ROOT / PACKAGE_NAME)]  # type: ignore[attr-defined]
+    package.__path__ = [  # type: ignore[attr-defined]
+        str(ROOT / "custom_components" / PACKAGE_NAME)
+    ]
     sys.modules[PACKAGE_NAME] = package
 sys.modules[PACKAGE_NAME].WatchdogConfigEntry = object
 
@@ -76,19 +78,19 @@ _install_homeassistant_stubs()
 
 models = _load_module(
     "power_watchdog_wifi.models",
-    ROOT / "power_watchdog_wifi" / "models.py",
+    ROOT / "custom_components" / "power_watchdog_wifi" / "models.py",
 )
 _load_module(
     "power_watchdog_wifi.const",
-    ROOT / "power_watchdog_wifi" / "const.py",
+    ROOT / "custom_components" / "power_watchdog_wifi" / "const.py",
 )
 _load_module(
     "power_watchdog_wifi.protocol",
-    ROOT / "power_watchdog_wifi" / "protocol.py",
+    ROOT / "custom_components" / "power_watchdog_wifi" / "protocol.py",
 )
 diagnostics = _load_module(
     "power_watchdog_wifi.diagnostics",
-    ROOT / "power_watchdog_wifi" / "diagnostics.py",
+    ROOT / "custom_components" / "power_watchdog_wifi" / "diagnostics.py",
 )
 
 

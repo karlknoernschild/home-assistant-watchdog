@@ -24,16 +24,18 @@ PACKAGE_NAME = "power_watchdog_wifi"
 
 if PACKAGE_NAME not in sys.modules:
     package = types.ModuleType(PACKAGE_NAME)
-    package.__path__ = [str(ROOT / PACKAGE_NAME)]  # type: ignore[attr-defined]
+    package.__path__ = [  # type: ignore[attr-defined]
+        str(ROOT / "custom_components" / PACKAGE_NAME)
+    ]
     sys.modules[PACKAGE_NAME] = package
 
 models = _load_module(
     "power_watchdog_wifi.models",
-    ROOT / "power_watchdog_wifi" / "models.py",
+    ROOT / "custom_components" / "power_watchdog_wifi" / "models.py",
 )
 protocol = _load_module(
     "power_watchdog_wifi.protocol",
-    ROOT / "power_watchdog_wifi" / "protocol.py",
+    ROOT / "custom_components" / "power_watchdog_wifi" / "protocol.py",
 )
 
 
