@@ -3,6 +3,10 @@
 Experimental, read-only custom integration for Hughes Autoformers Power Watchdog
 WiFi models.
 
+## Quick add to HACS
+
+[![Open your Home Assistant instance and open this repository in the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=karlknoernschild&repository=home-assistant-watchdog&category=integration)
+
 ## Safety boundary
 
 The client implements only:
