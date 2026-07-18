@@ -1,4 +1,8 @@
-"""Base entity for Power Watchdog WiFi."""
+"""Base entity for Power Watchdog WiFi.
+
+Entity classes share dynamic device info and availability logic here so each
+platform entity only needs to provide value mapping.
+"""
 
 from __future__ import annotations
 

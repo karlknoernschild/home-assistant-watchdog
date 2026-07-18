@@ -9,6 +9,7 @@ from pathlib import Path
 
 
 def _load_module(module_name: str, file_path: Path):
+    """Load a module from disk without importing Home Assistant dependencies."""
     spec = spec_from_file_location(module_name, file_path)
     assert spec is not None
     assert spec.loader is not None
@@ -23,6 +24,7 @@ PACKAGE_NAME = "power_watchdog_wifi"
 
 if PACKAGE_NAME not in sys.modules:
     package = types.ModuleType(PACKAGE_NAME)
+    # Tests resolve integration modules from the custom_components layout.
     package.__path__ = [  # type: ignore[attr-defined]
         str(ROOT / "custom_components" / PACKAGE_NAME)
     ]

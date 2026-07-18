@@ -1,4 +1,10 @@
-"""Config flow for Power Watchdog WiFi."""
+"""Config flow for Power Watchdog WiFi.
+
+Flow shape:
+1) collect credentials and discover device list
+2) auto-create entry for single-device accounts
+3) show selector for multi-device accounts
+"""
 
 from __future__ import annotations
 

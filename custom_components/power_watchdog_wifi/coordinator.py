@@ -1,4 +1,13 @@
-"""Push coordinator for Power Watchdog WiFi."""
+"""Push coordinator for Power Watchdog WiFi.
+
+This coordinator is the central runtime state machine for the integration.
+It combines multiple concerns in one place so entities can stay thin:
+- telemetry subscription lifecycle and reconnect/backoff behavior
+- timeout-based availability transitions
+- runtime counters for diagnostics
+- periodic metadata refresh
+- derived metric calculation + persistence
+"""
 
 from __future__ import annotations
 

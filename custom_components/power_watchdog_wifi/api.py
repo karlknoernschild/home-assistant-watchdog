@@ -1,4 +1,16 @@
-"""Read-only cloud client for Power Watchdog WiFi."""
+"""Read-only cloud client for Power Watchdog WiFi.
+
+This module encapsulates all network communication with the vendor cloud:
+- REST login
+- REST device listing
+- WebSocket login + subscription
+- packet decode handoff
+
+Design goals for maintainers:
+- Keep the surface area strictly read-only.
+- Convert low-level transport/protocol errors into integration-level exceptions.
+- Emit decode failures as explicit events so coordinator metrics stay accurate.
+"""
 
 from __future__ import annotations
 

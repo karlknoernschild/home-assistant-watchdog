@@ -1,4 +1,9 @@
-"""Read-only decoder for Power Watchdog WiFi telemetry packets."""
+"""Read-only decoder for Power Watchdog WiFi telemetry packets.
+
+The decoder validates frame markers and lengths before decoding to typed
+dataclasses. Unknown/non-report command frames are accepted but ignored to keep
+telemetry handling robust against control/heartbeat traffic.
+"""
 
 from __future__ import annotations
 

@@ -1,4 +1,9 @@
-"""Data models for Power Watchdog WiFi."""
+"""Data models for Power Watchdog WiFi.
+
+These dataclasses are intentionally immutable (`frozen=True`) so snapshot
+updates are explicit (`dataclasses.replace`) and easier to reason about in
+coordinator flows and tests.
+"""
 
 from __future__ import annotations
 
