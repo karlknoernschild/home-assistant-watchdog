@@ -29,6 +29,7 @@ It does not implement relay control, energy reset, configuration, rename, add, d
 5. Restart Home Assistant.
 6. Open **Settings > Devices & services > Add integration**.
 7. Search for **Power Watchdog WiFi** and complete setup.
+8. If your account has multiple Watchdog devices, repeat **Add integration** once per device.
 
 After download, HACS will detect new tagged releases and surface updates in the HACS UI.
 
@@ -55,6 +56,17 @@ After download, HACS will detect new tagged releases and surface updates in the 
 - Derived today energy (daily delta from total energy)
 - Derived yesterday energy (previous local-day bucket)
 
+Derived metrics behavior:
+
+- Daily buckets roll at the local day boundary (today resets, yesterday receives the prior day value).
+- Derived day-bucket energy is persisted and restored across Home Assistant restart.
+- Rolling average power is computed from runtime samples and resumes from new samples after restart.
+
+Availability behavior:
+
+- Entities become unavailable when no valid telemetry is received for 120 seconds.
+- Availability is restored automatically when valid telemetry resumes.
+
 ## Example dashboard
 
 An optional, sanitized example dashboard is available in
@@ -70,6 +82,21 @@ The example requires these HACS frontend cards:
 - ApexCharts Card
 - card-mod
 
+The example also requires an Input select helper with entity ID
+`input_select.graph_time_range` and these exact options:
+
+- 1 Hour
+- 3 Hours
+- 6 Hours
+- 12 Hours
+- 24 Hours
+- 3 Days
+- 7 Days
+
+You can create this helper in the UI or merge
+[`examples/dashboard/helpers.yaml`](examples/dashboard/helpers.yaml) into
+`configuration.yaml`.
+
 ![Example Power Watchdog dashboard](examples/dashboard/dashboard.png)
 
 See [`examples/dashboard/README.md`](examples/dashboard/README.md) for helper
@@ -80,6 +107,8 @@ setup, entity-prefix replacement, and import instructions.
 Diagnostics are available from Home Assistant and include coordinator runtime counters, protocol markers, and normalized device metadata with recursive redaction for sensitive account, token, and device identifier fields.
 
 Native today/yesterday/peak-demand energy fields are not currently provided by the decoded protocol path, so those metrics are exposed as derived values. Derived daily buckets roll at the local day boundary and are persisted across restart.
+
+When runtime failures occur, the integration creates Home Assistant Repairs issues for authentication failures, cloud connectivity failures, and unsupported device mapping.
 
 ## Data path
 
