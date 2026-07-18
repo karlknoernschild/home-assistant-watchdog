@@ -10,7 +10,15 @@
 1. Run local checks (`python -m compileall custom_components/power_watchdog_wifi`, `pytest`, `python -m ruff check custom_components/power_watchdog_wifi tests`).
 2. Update `CHANGELOG.md` and move release notes from `Unreleased` to a version header.
 3. Bump `custom_components/power_watchdog_wifi/manifest.json` version.
-4. Tag the release (`vX.Y.Z`) and publish release notes from changelog content.
+4. Commit changes and push to `main`.
+5. Create and push tag `vX.Y.Z`.
+6. GitHub Actions `Release` workflow validates tag/version and publishes GitHub Release.
+
+## HACS compatibility notes
+
+- Integration code must remain under `custom_components/power_watchdog_wifi`.
+- `hacs.json` must remain present and valid at repository root.
+- HACS update discovery is driven by repository releases/tags.
 
 ## Manual verification in Home Assistant
 

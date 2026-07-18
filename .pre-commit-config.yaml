@@ -21,4 +21,4 @@ repos:
 default_language_version:
   python: python3
 
-files: ^(custom_components/|tests/|\.github/workflows/|README\.md|RELEASING\.md|CHANGELOG\.md|hacs\.json|pyrightconfig\.json|pytest\.ini|\.ruff\.toml|\.pre-commit-config\.yaml)$
+files: ^(custom_components/|tests/|\.github/workflows/|README\.md$|RELEASING\.md$|CHANGELOG\.md$|hacs\.json$|pyrightconfig\.json$|pytest\.ini$|\.ruff\.toml$|\.pre-commit-config\.yaml$)
