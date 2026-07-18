@@ -149,6 +149,8 @@ class ReadOnlyWatchdogClient:
                             subscribed = True
                             continue
 
+                        # We intentionally ignore non-report actions here; those
+                        # frames are control/keepalive noise for telemetry flow.
                         if action != "report":
                             continue
 
@@ -158,6 +160,8 @@ class ReadOnlyWatchdogClient:
                         try:
                             decoded = decode_report(packet)
                         except ProtocolError:
+                            # Decode errors are surfaced as explicit events so
+                            # coordinator counters/diagnostics can track them.
                             yield WatchdogTelemetryEvent(
                                 telemetry=None,
                                 decode_error=True,

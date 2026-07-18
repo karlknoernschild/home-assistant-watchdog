@@ -38,6 +38,8 @@ class WatchdogEntity(CoordinatorEntity[WatchdogCoordinator]):
     @property
     def _metadata(self) -> WatchdogDeviceMetadata:
         """Return refreshed metadata with config-entry fallback values."""
+        # Prefer coordinator metadata because it is refreshed during runtime;
+        # config-entry data is only a persisted fallback.
         snapshot_metadata = self.coordinator.data.device_metadata
         if snapshot_metadata is not None:
             return snapshot_metadata

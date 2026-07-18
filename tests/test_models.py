@@ -14,6 +14,7 @@ _SPEC = spec_from_file_location("power_watchdog_wifi.models", _MODELS_PATH)
 assert _SPEC is not None
 assert _SPEC.loader is not None
 _MODULE = module_from_spec(_SPEC)
+# Load the target module without importing Home Assistant runtime dependencies.
 sys.modules[_SPEC.name] = _MODULE
 _SPEC.loader.exec_module(_MODULE)
 

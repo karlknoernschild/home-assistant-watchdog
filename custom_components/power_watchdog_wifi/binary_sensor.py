@@ -25,6 +25,7 @@ class WatchdogBinarySensorDescription(BinarySensorEntityDescription):
 
 
 BINARY_SENSORS: tuple[WatchdogBinarySensorDescription, ...] = (
+    # Verified-only mapping policy: expose only high-confidence error signals.
     WatchdogBinarySensorDescription(
         key="l1_error_present",
         translation_key="l1_error_present",

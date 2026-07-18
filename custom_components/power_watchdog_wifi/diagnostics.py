@@ -27,6 +27,8 @@ _REDACT_KEYS = {
 
 def _snapshot_to_dict(snapshot) -> dict[str, Any]:
     """Convert coordinator snapshot to serializable diagnostics data."""
+    # Keep this payload schema stable and explicit: HA diagnostics are often
+    # copied into bug reports and should be predictable across versions.
     return {
         "latest_telemetry": (
             asdict(snapshot.latest_telemetry)
@@ -81,6 +83,8 @@ def _build_diagnostics_payload(entry: WatchdogConfigEntry) -> dict[str, Any]:
             "authenticated": runtime.client.authenticated,
         },
         "energy_source_availability": {
+            # Native fields are currently absent in protocol/API paths; these
+            # flags make that status explicit in diagnostics output.
             "native_today_energy": False,
             "native_yesterday_energy": False,
             "native_peak_demand": False,

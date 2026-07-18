@@ -3,6 +3,7 @@
 DOMAIN = "power_watchdog_wifi"
 PLATFORMS = ["sensor", "binary_sensor"]
 
+# Config-entry keys persisted from config flow / cloud metadata.
 CONF_ACCOUNT = "account"
 CONF_PASSWORD = "password"
 CONF_DEVICE_NO = "device_no"
@@ -19,6 +20,7 @@ WS_URL = "ws://ws.watchdogsrv.com:5521/ws"
 APP_VERSION = "1.0.15"
 APP_DEVICE = "android"
 
+# Runtime tuning defaults.
 WS_RECONNECT_MIN_SECONDS = 5
 WS_RECONNECT_MAX_SECONDS = 300
 TELEMETRY_AVAILABILITY_TIMEOUT_SECONDS = 120

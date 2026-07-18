@@ -115,6 +115,7 @@ def metadata_from_device_row(
     device: Mapping[str, Any],
 ) -> WatchdogDeviceMetadata:
     """Normalize metadata fields from a device list row."""
+    # Keep identifier order deterministic for diagnostics/tests while deduping.
     cloud_identifiers: list[str] = []
     for key in ("id", "device_no", "gid"):
         value = device.get(key)

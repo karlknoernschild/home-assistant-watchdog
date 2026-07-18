@@ -34,6 +34,7 @@ class WatchdogSensorDescription(SensorEntityDescription):
 
 
 SENSORS: tuple[WatchdogSensorDescription, ...] = (
+    # Baseline live telemetry sensors (mapped directly from decoded packets).
     WatchdogSensorDescription(
         key="l1_voltage",
         translation_key="l1_voltage",
@@ -166,6 +167,8 @@ SENSORS: tuple[WatchdogSensorDescription, ...] = (
         if snapshot.latest_telemetry is not None
         else None,
     ),
+    # Derived metrics intentionally labeled as "derived_*" to distinguish them
+    # from native device fields.
     WatchdogSensorDescription(
         key="derived_rolling_average_power",
         translation_key="derived_rolling_average_power",

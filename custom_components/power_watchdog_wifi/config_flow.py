@@ -58,6 +58,7 @@ class PowerWatchdogConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             except WatchdogConnectionError:
                 errors["base"] = "cannot_connect"
             else:
+                # Branch early for single-device accounts to keep setup UX short.
                 if not self._devices:
                     errors["base"] = "no_devices"
                 elif len(self._devices) == 1:

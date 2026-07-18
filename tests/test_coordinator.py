@@ -200,6 +200,7 @@ def test_timeout_tracker_marks_coordinator_unavailable() -> None:
     original_sleep = coordinator_mod.asyncio.sleep
 
     async def fake_sleep(_seconds):
+        # Exit the infinite coordinator loop deterministically after one pass.
         sleep_calls["count"] += 1
         if sleep_calls["count"] > 1:
             raise asyncio.CancelledError
