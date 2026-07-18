@@ -39,6 +39,15 @@ delete, share, transfer, or a generic request/command method.
 - L1/L2 accumulated energy
 - Total accumulated energy
 - Frequency
+- L1 error present
+- L2 error present
+- Error present (aggregate)
+
+## Diagnostics
+
+Diagnostics are available from Home Assistant and include coordinator runtime
+counters, protocol markers, and normalized device metadata with recursive
+redaction for sensitive account, token, and device identifier fields.
 
 ## Data path
 

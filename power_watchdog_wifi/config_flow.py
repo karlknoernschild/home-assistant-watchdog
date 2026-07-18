@@ -14,11 +14,14 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from .api import ReadOnlyWatchdogClient, WatchdogAuthError, WatchdogConnectionError
 from .const import (
     CONF_ACCOUNT,
+    CONF_CONNECT_TYPE,
     CONF_DEVICE_ID,
     CONF_DEVICE_NAME,
     CONF_DEVICE_NO,
     CONF_FIRMWARE,
     CONF_MCU_FIRMWARE,
+    CONF_SOCKET_STATE,
+    CONF_START_FROM,
     DOMAIN,
 )
 
@@ -115,5 +118,8 @@ class PowerWatchdogConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 CONF_DEVICE_NAME: name,
                 CONF_FIRMWARE: device.get("version"),
                 CONF_MCU_FIRMWARE: device.get("mcu_version"),
+                CONF_CONNECT_TYPE: device.get("connect_type"),
+                CONF_SOCKET_STATE: device.get("socket_state"),
+                CONF_START_FROM: device.get("start_from"),
             },
         )

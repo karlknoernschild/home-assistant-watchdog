@@ -63,6 +63,17 @@
       "frequency": {
         "name": "Frequency"
       }
+    },
+    "binary_sensor": {
+      "l1_error_present": {
+        "name": "L1 error present"
+      },
+      "l2_error_present": {
+        "name": "L2 error present"
+      },
+      "error_present": {
+        "name": "Error present"
+      }
     }
   }
 }
