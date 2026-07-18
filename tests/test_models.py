@@ -5,7 +5,10 @@ from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 
 _MODELS_PATH = (
-    Path(__file__).resolve().parent.parent / "power_watchdog_wifi" / "models.py"
+    Path(__file__).resolve().parent.parent
+    / "custom_components"
+    / "power_watchdog_wifi"
+    / "models.py"
 )
 _SPEC = spec_from_file_location("power_watchdog_wifi.models", _MODELS_PATH)
 assert _SPEC is not None

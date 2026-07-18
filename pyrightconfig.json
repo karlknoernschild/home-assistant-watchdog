@@ -2,7 +2,7 @@
   "pythonVersion": "3.12",
   "typeCheckingMode": "basic",
   "include": [
-    "power_watchdog_wifi",
+    "custom_components/power_watchdog_wifi",
     "tests"
   ],
   "exclude": [

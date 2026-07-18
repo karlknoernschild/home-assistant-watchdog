@@ -23,12 +23,14 @@ PACKAGE_NAME = "power_watchdog_wifi"
 
 if PACKAGE_NAME not in sys.modules:
     package = types.ModuleType(PACKAGE_NAME)
-    package.__path__ = [str(ROOT / PACKAGE_NAME)]  # type: ignore[attr-defined]
+    package.__path__ = [  # type: ignore[attr-defined]
+        str(ROOT / "custom_components" / PACKAGE_NAME)
+    ]
     sys.modules[PACKAGE_NAME] = package
 
 helpers = _load_module(
     "power_watchdog_wifi.config_flow_helpers",
-    ROOT / "power_watchdog_wifi" / "config_flow_helpers.py",
+    ROOT / "custom_components" / "power_watchdog_wifi" / "config_flow_helpers.py",
 )
 
 

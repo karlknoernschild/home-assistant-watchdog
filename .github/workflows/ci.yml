@@ -22,10 +22,10 @@ jobs:
           pip install pytest ruff
 
       - name: Compile integration
-        run: python -m compileall power_watchdog_wifi
+        run: python -m compileall custom_components/power_watchdog_wifi
 
       - name: Lint
-        run: python -m ruff check power_watchdog_wifi tests
+        run: python -m ruff check custom_components/power_watchdog_wifi tests
 
       - name: Run tests
         run: pytest
