@@ -29,12 +29,12 @@ delete, share, transfer, or a generic request/command method.
 3. Add repository URL:
    `https://github.com/karlknoernschild/home-assistant-watchdog`
    with category/type **Integration**.
-4. Search for **Power Watchdog WiFi** in HACS and click **Install**.
+4. Search for **Power Watchdog WiFi** in HACS and click **Download**.
 5. Restart Home Assistant.
 6. Open **Settings > Devices & services > Add integration**.
 7. Search for **Power Watchdog WiFi** and complete setup.
 
-After install, HACS will detect new tagged releases and surface updates in the
+After download, HACS will detect new tagged releases and surface updates in the
 HACS UI.
 
 ### Option B: Manual copy
