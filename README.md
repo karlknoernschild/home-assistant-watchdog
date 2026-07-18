@@ -70,3 +70,11 @@ This is a cloud-push integration. It authenticates against
 - The WebSocket endpoint currently uses `ws://`, matching the official app.
 - This is an independently developed interoperability integration and is not
   affiliated with Hughes Autoformers.
+
+## Development quality tooling
+
+- License: `LICENSE` (MIT).
+- Test/lint/dev tooling dependencies: `requirements_test.txt`.
+- Pre-commit: `.pre-commit-config.yaml` (`python -m pre_commit run --all-files`).
+- Pytest harness is strict by default (`pytest.ini`) and blocks outbound network
+  access during tests except localhost.

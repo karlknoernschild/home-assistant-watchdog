@@ -15,3 +15,5 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
   timeout transitions, diagnostics redaction, and config-flow device-selection
   behavior.
 - Manual/HACS verification checklist and staged release recommendation guidance.
+- Repository maturity improvements: MIT license, pre-commit configuration, and
+  stricter pytest harness defaults with outbound-network blocking in tests.
