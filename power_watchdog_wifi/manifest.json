@@ -2,11 +2,13 @@
   "domain": "power_watchdog_wifi",
   "name": "Power Watchdog WiFi",
   "version": "0.1.0",
-  "documentation": "https://github.com/placeholder/power-watchdog-wifi",
-  "issue_tracker": "https://github.com/placeholder/power-watchdog-wifi/issues",
+  "documentation": "https://github.com/karlknoernschild/home-assistant-watchdog",
+  "issue_tracker": "https://github.com/karlknoernschild/home-assistant-watchdog/issues",
   "config_flow": true,
   "integration_type": "device",
   "iot_class": "cloud_push",
   "requirements": [],
-  "codeowners": []
+  "codeowners": [
+    "@karlknoernschild"
+  ]
 }

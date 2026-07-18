@@ -19,12 +19,20 @@ from .const import (
     CONF_DEVICE_NO,
     CONF_FIRMWARE,
     CONF_MCU_FIRMWARE,
-    CONF_START_FROM,
     CONF_SOCKET_STATE,
+    CONF_START_FROM,
     PLATFORMS,
 )
 from .coordinator import WatchdogCoordinator
 from .models import metadata_from_device_row
+from .repairs import (
+    ISSUE_DEVICE_MAPPING_UNSUPPORTED,
+    clear_issue,
+    clear_runtime_issues,
+    create_auth_failed_issue,
+    create_cannot_connect_issue,
+    create_device_mapping_unsupported_issue,
+)
 
 
 @dataclass(slots=True)
@@ -51,8 +59,10 @@ async def async_setup_entry(
     try:
         devices = await client.async_list_devices()
     except WatchdogAuthError as err:
+        create_auth_failed_issue(hass, entry.entry_id)
         raise ConfigEntryAuthFailed from err
     except WatchdogConnectionError as err:
+        create_cannot_connect_issue(hass, entry.entry_id)
         raise ConfigEntryNotReady from err
 
     device_no = entry.data[CONF_DEVICE_NO]
@@ -65,7 +75,10 @@ async def async_setup_entry(
         None,
     )
     if device is None:
+        create_device_mapping_unsupported_issue(hass, entry.entry_id)
         raise ConfigEntryNotReady("Configured Watchdog was not returned by the account")
+    clear_issue(hass, entry.entry_id, ISSUE_DEVICE_MAPPING_UNSUPPORTED)
+    clear_runtime_issues(hass, entry.entry_id)
 
     metadata = metadata_from_device_row(device_no, device)
     coordinator = WatchdogCoordinator(hass, client, device_no, metadata)

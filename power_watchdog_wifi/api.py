@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import json
 import time
 from collections.abc import AsyncIterator
@@ -66,7 +65,7 @@ class ReadOnlyWatchdogClient:
                 timeout=ClientTimeout(total=30),
             ) as response:
                 payload = await response.json(content_type=None)
-        except (ClientError, asyncio.TimeoutError, ValueError) as err:
+        except (TimeoutError, ClientError, ValueError) as err:
             raise WatchdogConnectionError("Unable to contact Watchdog cloud") from err
 
         if response.status != 200:
@@ -96,7 +95,7 @@ class ReadOnlyWatchdogClient:
                 timeout=ClientTimeout(total=30),
             ) as response:
                 payload = await response.json(content_type=None)
-        except (ClientError, asyncio.TimeoutError, ValueError) as err:
+        except (TimeoutError, ClientError, ValueError) as err:
             raise WatchdogConnectionError("Unable to retrieve device list") from err
 
         if response.status != 200 or payload.get("code") != 200:
@@ -159,7 +158,10 @@ class ReadOnlyWatchdogClient:
                         try:
                             decoded = decode_report(packet)
                         except ProtocolError:
-                            yield WatchdogTelemetryEvent(telemetry=None, decode_error=True)
+                            yield WatchdogTelemetryEvent(
+                                telemetry=None,
+                                decode_error=True,
+                            )
                             continue
                         if decoded is not None:
                             yield WatchdogTelemetryEvent(telemetry=decoded)
@@ -173,5 +175,5 @@ class ReadOnlyWatchdogClient:
                         break
         except WatchdogError:
             raise
-        except (ClientError, asyncio.TimeoutError) as err:
+        except (TimeoutError, ClientError) as err:
             raise WatchdogConnectionError("Telemetry connection failed") from err

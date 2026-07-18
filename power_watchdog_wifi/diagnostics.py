@@ -85,8 +85,14 @@ def _build_diagnostics_payload(entry: WatchdogConfigEntry) -> dict[str, Any]:
             "native_yesterday_energy": False,
             "native_peak_demand": False,
             "derived_metrics_enabled": True,
-            "day_rollover_rule": "At local day boundary, today's derived energy rolls into yesterday and today resets to 0 kWh",
-            "restart_restore_strategy": "Daily derived buckets are restored from persisted state; rolling-average power resumes from new runtime samples",
+            "day_rollover_rule": (
+                "At local day boundary, today's derived energy rolls into "
+                "yesterday and today resets to 0 kWh"
+            ),
+            "restart_restore_strategy": (
+                "Daily derived buckets are restored from persisted state; "
+                "rolling-average power resumes from new runtime samples"
+            ),
         },
         "protocol_markers": PROTOCOL_MARKERS,
     }
