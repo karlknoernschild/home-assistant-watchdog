@@ -1,0 +1,68 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to Power Watchdog WiFi",
+        "description": "Enter the credentials used by the official Power Watchdog WiFi app. This integration is read-only.",
+        "data": {
+          "account": "Email address",
+          "password": "Password"
+        }
+      },
+      "device": {
+        "title": "Select a Power Watchdog",
+        "data": {
+          "device_no": "Device"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Unable to connect to the Power Watchdog cloud",
+      "invalid_auth": "Invalid email address or password",
+      "no_devices": "No Power Watchdog devices were found"
+    },
+    "abort": {
+      "already_configured": "This Power Watchdog is already configured"
+    }
+  },
+  "entity": {
+    "sensor": {
+      "l1_voltage": {
+        "name": "L1 voltage"
+      },
+      "l2_voltage": {
+        "name": "L2 voltage"
+      },
+      "l1_current": {
+        "name": "L1 current"
+      },
+      "l2_current": {
+        "name": "L2 current"
+      },
+      "total_current": {
+        "name": "Total current"
+      },
+      "l1_power": {
+        "name": "L1 power"
+      },
+      "l2_power": {
+        "name": "L2 power"
+      },
+      "total_power": {
+        "name": "Total power"
+      },
+      "l1_energy": {
+        "name": "L1 energy"
+      },
+      "l2_energy": {
+        "name": "L2 energy"
+      },
+      "total_energy": {
+        "name": "Total energy"
+      },
+      "frequency": {
+        "name": "Frequency"
+      }
+    }
+  }
+}
