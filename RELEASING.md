@@ -5,14 +5,37 @@
 - Use semantic versioning for `custom_components/power_watchdog_wifi/manifest.json`.
 - Keep changes grouped in `CHANGELOG.md` under `Unreleased` until cut.
 
-## Release checklist
+## Automated release process
 
-1. Run local checks (`python -m compileall custom_components/power_watchdog_wifi`, `pytest`, `python -m ruff check custom_components/power_watchdog_wifi tests`).
-2. Update `CHANGELOG.md` and move release notes from `Unreleased` to a version header.
-3. Bump `custom_components/power_watchdog_wifi/manifest.json` version.
-4. Commit changes and push to `main`.
-5. Create and push tag `vX.Y.Z`.
-6. GitHub Actions `Release` workflow validates tag/version and publishes GitHub Release.
+The release process is automated via `release.py`. The script handles:
+- Running local checks (compilation, pytest, ruff linting)
+- Updating `CHANGELOG.md` with new version and date
+- Bumping version in `custom_components/power_watchdog_wifi/manifest.json`
+- Committing changes to `main`
+- Creating and pushing git tag `vX.Y.Z`
+
+### Running the release script
+
+```bash
+python release.py <version>
+```
+
+Example:
+```bash
+python release.py 0.2.0
+```
+
+The script will:
+1. ✅ Validate version format (semantic versioning X.Y.Z)
+2. ✅ Run local checks (compilation, tests, linting)
+3. ✅ Update CHANGELOG.md and move notes from `Unreleased` to version header
+4. ✅ Bump manifest.json version
+5. ✅ Commit changes and push to `main`
+6. ✅ Create and push tag `vX.Y.Z`
+
+After the script completes successfully:
+- GitHub Actions `Release` workflow validates tag/version and publishes GitHub Release
+- HACS update discovery is triggered by the repository release/tag
 
 ## HACS compatibility notes
 
