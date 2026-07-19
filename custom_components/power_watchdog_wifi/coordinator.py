@@ -119,9 +119,20 @@ class WatchdogCoordinator(DataUpdateCoordinator[WatchdogSnapshot]):
             poll_interval_minutes = DEFAULT_POLL_INTERVAL_MINUTES
         self._connection_mode = mode
         self._poll_interval_minutes = poll_interval_minutes
+        _LOGGER.info(
+            "Configured connection mode=%s poll_interval=%s min device_no=%s",
+            self._connection_mode,
+            self._poll_interval_minutes,
+            self.device_no,
+        )
 
     async def async_start(self) -> None:
         """Start the push listener."""
+        _LOGGER.info(
+            "Starting coordinator for device_no=%s mode=%s",
+            self.device_no,
+            self._connection_mode,
+        )
         await self._async_load_derived_energy_state()
         if self._task is None:
             self._task = self.config_entry.async_create_background_task(
@@ -144,6 +155,7 @@ class WatchdogCoordinator(DataUpdateCoordinator[WatchdogSnapshot]):
 
     async def async_stop(self) -> None:
         """Stop the push listener."""
+        _LOGGER.info("Stopping coordinator for device_no=%s", self.device_no)
         if self._task is not None:
             self._task.cancel()
             with suppress(asyncio.CancelledError):
@@ -170,8 +182,10 @@ class WatchdogCoordinator(DataUpdateCoordinator[WatchdogSnapshot]):
 
     async def _async_listen(self) -> None:
         if self._connection_mode == CONNECTION_MODE_ALWAYS_ON:
+            _LOGGER.debug("Starting always-on telemetry loop for device_no=%s", self.device_no)
             await self._async_listen_always_on()
             return
+        _LOGGER.debug("Starting polling telemetry loop for device_no=%s", self.device_no)
         await self._async_listen_polling()
 
     async def _async_listen_always_on(self) -> None:
@@ -199,6 +213,11 @@ class WatchdogCoordinator(DataUpdateCoordinator[WatchdogSnapshot]):
                         first_valid_packet = False
                         # Reconnect is the best moment to refresh metadata;
                         # cloud-side firmware/connectivity fields can change.
+                        _LOGGER.info(
+                            "Telemetry connection established for device_no=%s reconnect_count=%s",
+                            self.device_no,
+                            reconnect_count,
+                        )
                         await self._async_refresh_device_metadata(force=True)
 
                     if event.telemetry is not None:
@@ -213,6 +232,12 @@ class WatchdogCoordinator(DataUpdateCoordinator[WatchdogSnapshot]):
                             force=False
                         )
                         self._timed_out = False
+                        _LOGGER.debug(
+                            "Processed telemetry packet device_no=%s packet_count=%s decode_errors=%s",
+                            self.device_no,
+                            packet_count,
+                            decode_error_count,
+                        )
                         self.async_set_updated_data(
                             replace(
                                 self.data,
@@ -259,7 +284,8 @@ class WatchdogCoordinator(DataUpdateCoordinator[WatchdogSnapshot]):
             except WatchdogConnectionError as err:
                 create_cannot_connect_issue(self.hass, self.config_entry.entry_id)
                 _LOGGER.warning(
-                    "Power Watchdog telemetry disconnected; retrying in %s seconds: %s",
+                    "Power Watchdog telemetry disconnected for device_no=%s; retrying in %s seconds: %s",
+                    self.device_no,
                     delay,
                     err,
                 )
@@ -275,16 +301,29 @@ class WatchdogCoordinator(DataUpdateCoordinator[WatchdogSnapshot]):
 
     async def _async_listen_polling(self) -> None:
         """Capture telemetry in short WebSocket sessions on a fixed cadence."""
-        await asyncio.sleep(self._initial_poll_offset_seconds())
+        initial_offset = self._initial_poll_offset_seconds()
+        _LOGGER.debug(
+            "Polling mode initial offset for device_no=%s is %.1f seconds",
+            self.device_no,
+            initial_offset,
+        )
+        await asyncio.sleep(initial_offset)
         while True:
             try:
+                _LOGGER.debug("Starting poll cycle for device_no=%s", self.device_no)
                 await self._async_run_poll_cycle()
             except asyncio.CancelledError:
                 raise
             except Exception as err:  # pragma: no cover - hard safety guard
                 _LOGGER.warning("Unexpected polling loop error: %s", err)
 
-            await asyncio.sleep(self._next_poll_sleep_seconds())
+            sleep_seconds = self._next_poll_sleep_seconds()
+            _LOGGER.debug(
+                "Polling sleep for device_no=%s is %.1f seconds",
+                self.device_no,
+                sleep_seconds,
+            )
+            await asyncio.sleep(sleep_seconds)
 
     async def _async_run_poll_cycle(self) -> None:
         """Run one polling capture cycle."""
@@ -307,6 +346,10 @@ class WatchdogCoordinator(DataUpdateCoordinator[WatchdogSnapshot]):
                             reconnect_count += 1
                         last_successful_connect_timestamp = dt_util.utcnow()
                         first_valid_packet = False
+                        _LOGGER.debug(
+                            "Polling cycle received first valid telemetry for device_no=%s",
+                            self.device_no,
+                        )
                         await self._async_refresh_device_metadata(force=True)
 
                     if event.telemetry is not None:
@@ -321,6 +364,11 @@ class WatchdogCoordinator(DataUpdateCoordinator[WatchdogSnapshot]):
                             force=False
                         )
                         self._timed_out = False
+                        _LOGGER.debug(
+                            "Polling cycle updated telemetry device_no=%s packet_count=%s",
+                            self.device_no,
+                            packet_count,
+                        )
                         self.async_set_updated_data(
                             replace(
                                 self.data,
@@ -357,6 +405,10 @@ class WatchdogCoordinator(DataUpdateCoordinator[WatchdogSnapshot]):
                     )
         except asyncio.TimeoutError:
             # Poll cycle ended without a valid packet; keep previous state.
+            _LOGGER.debug(
+                "Polling cycle timed out without telemetry for device_no=%s",
+                self.device_no,
+            )
             return
         except WatchdogAuthError:
             _LOGGER.error("Power Watchdog authentication failed")
@@ -365,6 +417,11 @@ class WatchdogCoordinator(DataUpdateCoordinator[WatchdogSnapshot]):
             raise asyncio.CancelledError
         except WatchdogConnectionError as err:
             create_cannot_connect_issue(self.hass, self.config_entry.entry_id)
+            _LOGGER.warning(
+                "Polling cycle connection error for device_no=%s: %s",
+                self.device_no,
+                err,
+            )
             snapshot = self.data
             self.async_set_updated_data(
                 replace(
@@ -386,6 +443,11 @@ class WatchdogCoordinator(DataUpdateCoordinator[WatchdogSnapshot]):
             )
             if timed_out != self._timed_out:
                 self._timed_out = timed_out
+                _LOGGER.info(
+                    "Availability changed for device_no=%s available=%s",
+                    self.device_no,
+                    not timed_out,
+                )
                 self.async_update_listeners()
 
     def _effective_availability_timeout(self) -> timedelta:
@@ -441,6 +503,10 @@ class WatchdogCoordinator(DataUpdateCoordinator[WatchdogSnapshot]):
             None,
         )
         if device is None:
+            _LOGGER.debug(
+                "Metadata refresh did not find device_no=%s in cloud device list",
+                self.device_no,
+            )
             return
 
         # Metadata refreshes should not discard runtime counters/telemetry, so
@@ -453,11 +519,13 @@ class WatchdogCoordinator(DataUpdateCoordinator[WatchdogSnapshot]):
                 last_device_refresh_timestamp=dt_util.utcnow(),
             )
         )
+        _LOGGER.debug("Metadata refreshed for device_no=%s", self.device_no)
 
     async def _async_load_derived_energy_state(self) -> None:
         """Load persisted derived daily energy state."""
         stored = await self._derived_energy_store.async_load()
         if not isinstance(stored, dict):
+            _LOGGER.debug("No persisted derived energy state found for device_no=%s", self.device_no)
             return
         try:
             day_iso = str(stored["day_iso"])
@@ -480,6 +548,7 @@ class WatchdogCoordinator(DataUpdateCoordinator[WatchdogSnapshot]):
             derived_today_energy_kwh=self._derived_energy_state.today_energy_kwh,
             derived_yesterday_energy_kwh=self._derived_energy_state.yesterday_energy_kwh,
         )
+        _LOGGER.debug("Loaded persisted derived energy state for device_no=%s", self.device_no)
 
     async def _async_maybe_persist_derived_energy_state(self, force: bool) -> None:
         """Persist derived energy state on interval or forced shutdown."""
@@ -505,6 +574,7 @@ class WatchdogCoordinator(DataUpdateCoordinator[WatchdogSnapshot]):
             }
         )
         self._last_derived_state_persist_timestamp = now
+        _LOGGER.debug("Persisted derived energy state for device_no=%s", self.device_no)
 
     def _update_derived_metrics(
         self,

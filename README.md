@@ -110,6 +110,28 @@ Polling interval choices are:
 Default polling interval is **10 minutes**. Polling mode also uses bounded
 jitter to spread reconnect timing across installations.
 
+## Logging
+
+This integration includes structured runtime logs for setup, authentication,
+WebSocket lifecycle, polling cycles, availability transitions, metadata refresh,
+and diagnostics-related counters.
+
+You can configure verbosity in two ways:
+
+- Integration options (**Settings -> Devices & services -> Power Watchdog WiFi -> Configure**) using **Log level**:
+    - Inherit Home Assistant logger level (default)
+    - Debug
+    - Info
+    - Warning
+    - Error
+- Home Assistant logger configuration (for example `custom_components.power_watchdog_wifi`).
+
+Recommended usage:
+
+- Keep **Inherit** or **Warning** for normal operation.
+- Use **Debug** temporarily when troubleshooting connection/authentication issues.
+- Return to a higher level after troubleshooting to reduce log volume.
+
 ## Example dashboard
 
 An optional, sanitized example dashboard is available in

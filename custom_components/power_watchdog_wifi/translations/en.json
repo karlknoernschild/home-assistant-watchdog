@@ -29,10 +29,11 @@
     "step": {
       "init": {
         "title": "Connection settings",
-        "description": "Choose how the integration connects to Power Watchdog cloud telemetry.",
+        "description": "Choose how the integration connects to Power Watchdog cloud telemetry and how verbose integration logs should be.",
         "data": {
           "connection_mode": "Connection mode",
-          "poll_interval_minutes": "Polling interval"
+          "poll_interval_minutes": "Polling interval",
+          "log_level": "Log level"
         }
       }
     }

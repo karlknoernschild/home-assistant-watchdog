@@ -15,6 +15,7 @@ Design goals for maintainers:
 from __future__ import annotations
 
 import json
+import logging
 import time
 from collections.abc import AsyncIterator
 from typing import Any
@@ -24,6 +25,8 @@ from aiohttp import ClientError, ClientSession, ClientTimeout, WSMsgType
 from .const import API_BASE_URL, APP_DEVICE, APP_VERSION, WS_URL
 from .models import WatchdogTelemetryEvent
 from .protocol import ProtocolError, decode_report
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class WatchdogError(Exception):
@@ -63,6 +66,7 @@ class ReadOnlyWatchdogClient:
 
     async def async_login(self) -> None:
         """Authenticate using the same read operation as the official app."""
+        _LOGGER.debug("Starting cloud login request")
         params = {
             "account": self._account,
             "password": self._password,
@@ -89,10 +93,12 @@ class ReadOnlyWatchdogClient:
         if not token:
             raise WatchdogAuthError("Login response did not include a token")
         self._token = str(token)
+        _LOGGER.info("Cloud login successful")
 
     async def async_list_devices(self) -> list[dict[str, Any]]:
         """Return devices belonging to the authenticated account."""
         if not self._token:
+            _LOGGER.debug("No cached token; logging in before device-list call")
             await self.async_login()
 
         params = {
@@ -114,7 +120,9 @@ class ReadOnlyWatchdogClient:
             raise WatchdogConnectionError(str(payload.get("msg", "Device list failed")))
 
         rows = payload.get("data", {}).get("rows", [])
-        return [row for row in rows if isinstance(row, dict)]
+        devices = [row for row in rows if isinstance(row, dict)]
+        _LOGGER.debug("Device-list request returned %s devices", len(devices))
+        return devices
 
     async def async_telemetry(
         self,
@@ -123,8 +131,14 @@ class ReadOnlyWatchdogClient:
         """Yield live telemetry from a read-only cloud subscription."""
         for attempt in range(2):
             if not self._token:
+                _LOGGER.debug("No cached token; logging in before telemetry session")
                 await self.async_login()
             assert self._token is not None
+            _LOGGER.debug(
+                "Opening telemetry websocket for device_no=%s attempt=%s",
+                device_no,
+                attempt + 1,
+            )
 
             try:
                 async with self._session.ws_connect(
@@ -139,6 +153,7 @@ class ReadOnlyWatchdogClient:
                             "data": {"token": self._token},
                         }
                     )
+                    _LOGGER.debug("Sent websocket login frame for device_no=%s", device_no)
                     subscribed = False
 
                     async for message in websocket:
@@ -154,6 +169,10 @@ class ReadOnlyWatchdogClient:
                                     # Retry once with a fresh token when the
                                     # cached token is no longer accepted.
                                     if attempt == 0:
+                                        _LOGGER.warning(
+                                            "Websocket token rejected for device_no=%s; refreshing token",
+                                            device_no,
+                                        )
                                         self._token = None
                                         break
                                     raise WatchdogAuthError("WebSocket login rejected")
@@ -165,6 +184,9 @@ class ReadOnlyWatchdogClient:
                                     }
                                 )
                                 subscribed = True
+                                _LOGGER.debug(
+                                    "Websocket subscribed for device_no=%s", device_no
+                                )
                                 continue
 
                             # We intentionally ignore non-report actions here; those
@@ -180,12 +202,18 @@ class ReadOnlyWatchdogClient:
                             except ProtocolError:
                                 # Decode errors are surfaced as explicit events so
                                 # coordinator counters/diagnostics can track them.
+                                _LOGGER.debug(
+                                    "Telemetry decode error for device_no=%s", device_no
+                                )
                                 yield WatchdogTelemetryEvent(
                                     telemetry=None,
                                     decode_error=True,
                                 )
                                 continue
                             if decoded is not None:
+                                _LOGGER.debug(
+                                    "Telemetry packet decoded for device_no=%s", device_no
+                                )
                                 yield WatchdogTelemetryEvent(telemetry=decoded)
 
                         elif message.type in {
@@ -200,8 +228,14 @@ class ReadOnlyWatchdogClient:
 
                     if attempt == 0 and self._token is None:
                         continue
+                    _LOGGER.debug("Telemetry websocket session ended for device_no=%s", device_no)
                     return
             except WatchdogError:
                 raise
             except (TimeoutError, ClientError) as err:
+                _LOGGER.warning(
+                    "Telemetry websocket error for device_no=%s: %s",
+                    device_no,
+                    err,
+                )
                 raise WatchdogConnectionError("Telemetry connection failed") from err

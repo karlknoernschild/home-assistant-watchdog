@@ -8,6 +8,7 @@ Flow shape:
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 import voluptuous as vol
@@ -26,6 +27,7 @@ from .const import (
     CONF_DEVICE_NAME,
     CONF_DEVICE_NO,
     CONF_FIRMWARE,
+    CONF_LOG_LEVEL,
     CONF_MCU_FIRMWARE,
     CONF_POLL_INTERVAL_MINUTES,
     CONF_SOCKET_STATE,
@@ -34,10 +36,14 @@ from .const import (
     CONNECTION_MODE_POLLING,
     CONNECTION_MODES,
     DEFAULT_CONNECTION_MODE,
+    DEFAULT_LOG_LEVEL,
     DEFAULT_POLL_INTERVAL_MINUTES,
     DOMAIN,
+    LOG_LEVELS,
     POLL_INTERVAL_MINUTES_ALLOWED,
 )
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class PowerWatchdogConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -67,6 +73,7 @@ class PowerWatchdogConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             self._account = user_input[CONF_ACCOUNT].strip()
             self._password = user_input[CONF_PASSWORD]
+            _LOGGER.debug("Config flow user step submitted")
             client = ReadOnlyWatchdogClient(
                 async_get_clientsession(self.hass),
                 self._account,
@@ -75,10 +82,16 @@ class PowerWatchdogConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             try:
                 self._devices = await client.async_list_devices()
             except WatchdogAuthError:
+                _LOGGER.warning("Config flow authentication failed")
                 errors["base"] = "invalid_auth"
             except WatchdogConnectionError:
+                _LOGGER.warning("Config flow connectivity failure")
                 errors["base"] = "cannot_connect"
             else:
+                _LOGGER.info(
+                    "Config flow discovered %s devices",
+                    len(self._devices),
+                )
                 # Branch early for single-device accounts to keep setup UX short.
                 if not self._devices:
                     errors["base"] = "no_devices"
@@ -106,6 +119,7 @@ class PowerWatchdogConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Select one device when the account has multiple."""
         if user_input is not None:
             selected = user_input[CONF_DEVICE_NO]
+            _LOGGER.debug("Config flow selected device_no=%s", selected)
             device = find_device_by_device_no(self._devices, selected)
             return await self._create_for_device(device)
 
@@ -121,6 +135,7 @@ class PowerWatchdogConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self._abort_if_unique_id_configured()
 
         name = str(device.get("name") or "Power Watchdog")
+        _LOGGER.info("Creating config entry for device_no=%s name=%s", device_no, name)
         return self.async_create_entry(
             title=name,
             data={
@@ -152,11 +167,19 @@ class PowerWatchdogOptionsFlow(config_entries.OptionsFlow):
         if user_input is not None:
             mode = str(user_input[CONF_CONNECTION_MODE])
             interval = int(user_input[CONF_POLL_INTERVAL_MINUTES])
+            log_level = str(user_input[CONF_LOG_LEVEL])
+            _LOGGER.info(
+                "Saving options connection_mode=%s poll_interval=%s log_level=%s",
+                mode,
+                interval,
+                log_level,
+            )
             return self.async_create_entry(
                 title="",
                 data={
                     CONF_CONNECTION_MODE: mode,
                     CONF_POLL_INTERVAL_MINUTES: interval,
+                    CONF_LOG_LEVEL: log_level,
                 },
             )
 
@@ -178,6 +201,15 @@ class PowerWatchdogOptionsFlow(config_entries.OptionsFlow):
         if current_interval not in POLL_INTERVAL_MINUTES_ALLOWED:
             current_interval = DEFAULT_POLL_INTERVAL_MINUTES
 
+        current_log_level = str(
+            self._config_entry.options.get(
+                CONF_LOG_LEVEL,
+                DEFAULT_LOG_LEVEL,
+            )
+        )
+        if current_log_level not in LOG_LEVELS:
+            current_log_level = DEFAULT_LOG_LEVEL
+
         mode_options = {
             CONNECTION_MODE_POLLING: "Polling",
             CONNECTION_MODE_ALWAYS_ON: "Always on",
@@ -185,6 +217,13 @@ class PowerWatchdogOptionsFlow(config_entries.OptionsFlow):
         interval_options = {
             value: f"Every {value} minute{'s' if value != 1 else ''}"
             for value in POLL_INTERVAL_MINUTES_ALLOWED
+        }
+        log_level_options = {
+            "inherit": "Inherit Home Assistant logger level",
+            "debug": "Debug",
+            "info": "Info",
+            "warning": "Warning",
+            "error": "Error",
         }
 
         return self.async_show_form(
@@ -198,6 +237,10 @@ class PowerWatchdogOptionsFlow(config_entries.OptionsFlow):
                         CONF_POLL_INTERVAL_MINUTES,
                         default=current_interval,
                     ): vol.In(interval_options),
+                    vol.Required(
+                        CONF_LOG_LEVEL,
+                        default=current_log_level,
+                    ): vol.In(log_level_options),
                 }
             ),
         )
