@@ -1,4 +1,4 @@
-# Power Watchdog WiFi for Home Assistant
+# <img src="custom_components/power_watchdog_wifi/icon.png" alt="Power Watchdog icon" width="42" /> Power Watchdog WiFi for Home Assistant
 
 Experimental, read-only custom integration for Hughes Autoformers Power Watchdog WiFi models.
 
