@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import logging
+from dataclasses import dataclass
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_PASSWORD
@@ -14,14 +14,14 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from .api import ReadOnlyWatchdogClient, WatchdogAuthError, WatchdogConnectionError
 from .const import (
     CONF_ACCOUNT,
-    CONF_CONNECTION_MODE,
     CONF_CONNECT_TYPE,
+    CONF_CONNECTION_MODE,
     CONF_DEVICE_ID,
     CONF_DEVICE_NAME,
     CONF_DEVICE_NO,
     CONF_FIRMWARE,
-    CONF_MCU_FIRMWARE,
     CONF_LOG_LEVEL,
+    CONF_MCU_FIRMWARE,
     CONF_POLL_INTERVAL_MINUTES,
     CONF_SOCKET_STATE,
     CONF_START_FROM,
@@ -66,7 +66,10 @@ async def async_setup_entry(
         str(entry.options.get(CONF_LOG_LEVEL, DEFAULT_LOG_LEVEL))
     )
     _LOGGER.info(
-        "Setting up %s entry_id=%s device_no=%s connection_mode=%s poll_interval=%s min log_level=%s",
+        (
+            "Setting up %s entry_id=%s device_no=%s connection_mode=%s "
+            "poll_interval=%s min log_level=%s"
+        ),
         DOMAIN,
         entry.entry_id,
         entry.data.get(CONF_DEVICE_NO, "unknown"),
@@ -86,7 +89,10 @@ async def async_setup_entry(
     try:
         devices = await client.async_list_devices()
     except WatchdogAuthError as err:
-        _LOGGER.error("Initial cloud authentication failed for entry_id=%s", entry.entry_id)
+        _LOGGER.error(
+            "Initial cloud authentication failed for entry_id=%s",
+            entry.entry_id,
+        )
         create_auth_failed_issue(hass, entry.entry_id)
         raise ConfigEntryAuthFailed from err
     except WatchdogConnectionError as err:
@@ -123,7 +129,12 @@ async def async_setup_entry(
     coordinator.config_entry = entry
     coordinator.configure_connection(
         str(entry.options.get(CONF_CONNECTION_MODE, DEFAULT_CONNECTION_MODE)),
-        int(entry.options.get(CONF_POLL_INTERVAL_MINUTES, DEFAULT_POLL_INTERVAL_MINUTES)),
+        int(
+            entry.options.get(
+                CONF_POLL_INTERVAL_MINUTES,
+                DEFAULT_POLL_INTERVAL_MINUTES,
+            )
+        ),
     )
     entry.runtime_data = WatchdogRuntimeData(client, coordinator)
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
@@ -159,7 +170,10 @@ async def async_unload_entry(
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
 
-async def _async_update_listener(hass: HomeAssistant, entry: WatchdogConfigEntry) -> None:
+async def _async_update_listener(
+    hass: HomeAssistant,
+    entry: WatchdogConfigEntry,
+) -> None:
     """Reload config entry when options change."""
     _LOGGER.info("Options updated; reloading entry_id=%s", entry.entry_id)
     apply_package_log_level(str(entry.options.get(CONF_LOG_LEVEL, DEFAULT_LOG_LEVEL)))

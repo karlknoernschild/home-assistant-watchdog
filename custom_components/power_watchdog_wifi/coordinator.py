@@ -182,10 +182,16 @@ class WatchdogCoordinator(DataUpdateCoordinator[WatchdogSnapshot]):
 
     async def _async_listen(self) -> None:
         if self._connection_mode == CONNECTION_MODE_ALWAYS_ON:
-            _LOGGER.debug("Starting always-on telemetry loop for device_no=%s", self.device_no)
+            _LOGGER.debug(
+                "Starting always-on telemetry loop for device_no=%s",
+                self.device_no,
+            )
             await self._async_listen_always_on()
             return
-        _LOGGER.debug("Starting polling telemetry loop for device_no=%s", self.device_no)
+        _LOGGER.debug(
+            "Starting polling telemetry loop for device_no=%s",
+            self.device_no,
+        )
         await self._async_listen_polling()
 
     async def _async_listen_always_on(self) -> None:
@@ -214,7 +220,10 @@ class WatchdogCoordinator(DataUpdateCoordinator[WatchdogSnapshot]):
                         # Reconnect is the best moment to refresh metadata;
                         # cloud-side firmware/connectivity fields can change.
                         _LOGGER.info(
-                            "Telemetry connection established for device_no=%s reconnect_count=%s",
+                            (
+                                "Telemetry connection established for device_no=%s "
+                                "reconnect_count=%s"
+                            ),
                             self.device_no,
                             reconnect_count,
                         )
@@ -233,7 +242,10 @@ class WatchdogCoordinator(DataUpdateCoordinator[WatchdogSnapshot]):
                         )
                         self._timed_out = False
                         _LOGGER.debug(
-                            "Processed telemetry packet device_no=%s packet_count=%s decode_errors=%s",
+                            (
+                                "Processed telemetry packet device_no=%s "
+                                "packet_count=%s decode_errors=%s"
+                            ),
                             self.device_no,
                             packet_count,
                             decode_error_count,
@@ -284,7 +296,10 @@ class WatchdogCoordinator(DataUpdateCoordinator[WatchdogSnapshot]):
             except WatchdogConnectionError as err:
                 create_cannot_connect_issue(self.hass, self.config_entry.entry_id)
                 _LOGGER.warning(
-                    "Power Watchdog telemetry disconnected for device_no=%s; retrying in %s seconds: %s",
+                    (
+                        "Power Watchdog telemetry disconnected for device_no=%s; "
+                        "retrying in %s seconds: %s"
+                    ),
                     self.device_no,
                     delay,
                     err,
@@ -347,7 +362,10 @@ class WatchdogCoordinator(DataUpdateCoordinator[WatchdogSnapshot]):
                         last_successful_connect_timestamp = dt_util.utcnow()
                         first_valid_packet = False
                         _LOGGER.debug(
-                            "Polling cycle received first valid telemetry for device_no=%s",
+                            (
+                                "Polling cycle received first valid telemetry "
+                                "for device_no=%s"
+                            ),
                             self.device_no,
                         )
                         await self._async_refresh_device_metadata(force=True)
@@ -365,7 +383,10 @@ class WatchdogCoordinator(DataUpdateCoordinator[WatchdogSnapshot]):
                         )
                         self._timed_out = False
                         _LOGGER.debug(
-                            "Polling cycle updated telemetry device_no=%s packet_count=%s",
+                            (
+                                "Polling cycle updated telemetry device_no=%s "
+                                "packet_count=%s"
+                            ),
                             self.device_no,
                             packet_count,
                         )
@@ -403,18 +424,18 @@ class WatchdogCoordinator(DataUpdateCoordinator[WatchdogSnapshot]):
                             ),
                         )
                     )
-        except asyncio.TimeoutError:
+        except TimeoutError:
             # Poll cycle ended without a valid packet; keep previous state.
             _LOGGER.debug(
                 "Polling cycle timed out without telemetry for device_no=%s",
                 self.device_no,
             )
             return
-        except WatchdogAuthError:
+        except WatchdogAuthError as err:
             _LOGGER.error("Power Watchdog authentication failed")
             create_auth_failed_issue(self.hass, self.config_entry.entry_id)
             self.async_set_update_error(WatchdogAuthError("Authentication failed"))
-            raise asyncio.CancelledError
+            raise asyncio.CancelledError from err
         except WatchdogConnectionError as err:
             create_cannot_connect_issue(self.hass, self.config_entry.entry_id)
             _LOGGER.warning(
@@ -525,7 +546,10 @@ class WatchdogCoordinator(DataUpdateCoordinator[WatchdogSnapshot]):
         """Load persisted derived daily energy state."""
         stored = await self._derived_energy_store.async_load()
         if not isinstance(stored, dict):
-            _LOGGER.debug("No persisted derived energy state found for device_no=%s", self.device_no)
+            _LOGGER.debug(
+                "No persisted derived energy state found for device_no=%s",
+                self.device_no,
+            )
             return
         try:
             day_iso = str(stored["day_iso"])
@@ -548,7 +572,10 @@ class WatchdogCoordinator(DataUpdateCoordinator[WatchdogSnapshot]):
             derived_today_energy_kwh=self._derived_energy_state.today_energy_kwh,
             derived_yesterday_energy_kwh=self._derived_energy_state.yesterday_energy_kwh,
         )
-        _LOGGER.debug("Loaded persisted derived energy state for device_no=%s", self.device_no)
+        _LOGGER.debug(
+            "Loaded persisted derived energy state for device_no=%s",
+            self.device_no,
+        )
 
     async def _async_maybe_persist_derived_energy_state(self, force: bool) -> None:
         """Persist derived energy state on interval or forced shutdown."""

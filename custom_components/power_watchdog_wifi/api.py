@@ -153,7 +153,10 @@ class ReadOnlyWatchdogClient:
                             "data": {"token": self._token},
                         }
                     )
-                    _LOGGER.debug("Sent websocket login frame for device_no=%s", device_no)
+                    _LOGGER.debug(
+                        "Sent websocket login frame for device_no=%s",
+                        device_no,
+                    )
                     subscribed = False
 
                     async for message in websocket:
@@ -170,7 +173,10 @@ class ReadOnlyWatchdogClient:
                                     # cached token is no longer accepted.
                                     if attempt == 0:
                                         _LOGGER.warning(
-                                            "Websocket token rejected for device_no=%s; refreshing token",
+                                            (
+                                                "Websocket token rejected for "
+                                                "device_no=%s; refreshing token"
+                                            ),
                                             device_no,
                                         )
                                         self._token = None
@@ -212,7 +218,8 @@ class ReadOnlyWatchdogClient:
                                 continue
                             if decoded is not None:
                                 _LOGGER.debug(
-                                    "Telemetry packet decoded for device_no=%s", device_no
+                                    "Telemetry packet decoded for device_no=%s",
+                                    device_no,
                                 )
                                 yield WatchdogTelemetryEvent(telemetry=decoded)
 
@@ -228,7 +235,10 @@ class ReadOnlyWatchdogClient:
 
                     if attempt == 0 and self._token is None:
                         continue
-                    _LOGGER.debug("Telemetry websocket session ended for device_no=%s", device_no)
+                    _LOGGER.debug(
+                        "Telemetry websocket session ended for device_no=%s",
+                        device_no,
+                    )
                     return
             except WatchdogError:
                 raise

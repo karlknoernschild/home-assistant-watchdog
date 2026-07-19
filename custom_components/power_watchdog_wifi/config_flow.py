@@ -21,8 +21,8 @@ from .api import ReadOnlyWatchdogClient, WatchdogAuthError, WatchdogConnectionEr
 from .config_flow_helpers import build_device_options, find_device_by_device_no
 from .const import (
     CONF_ACCOUNT,
-    CONF_CONNECTION_MODE,
     CONF_CONNECT_TYPE,
+    CONF_CONNECTION_MODE,
     CONF_DEVICE_ID,
     CONF_DEVICE_NAME,
     CONF_DEVICE_NO,
