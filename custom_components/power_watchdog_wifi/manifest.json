@@ -1,7 +1,7 @@
 {
   "domain": "power_watchdog_wifi",
   "name": "Power Watchdog WiFi",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "documentation": "https://github.com/karlknoernschild/home-assistant-watchdog",
   "issue_tracker": "https://github.com/karlknoernschild/home-assistant-watchdog/issues",
   "icon": "icon.png",
