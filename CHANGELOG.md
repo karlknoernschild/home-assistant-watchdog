@@ -7,6 +7,8 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## Unreleased
 
+## [0.5.0] - 2026-07-18
+
 ### Added
 - Debug log messages now include rich detail: decoded telemetry values (L1/L2 voltage, current, power), WebSocket frame action names, WS close/error message types, and ProtocolError descriptions.
 - Logging added to `repairs.py` — issue creation and clearing events are now visible in HA logs.
