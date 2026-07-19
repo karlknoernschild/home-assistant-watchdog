@@ -165,7 +165,8 @@ class ReadOnlyWatchdogClient:
                                 payload = json.loads(message.data)
                             except (json.JSONDecodeError, TypeError) as err:
                                 _LOGGER.debug(
-                                    "WebSocket message JSON parse error for device_no=%s: %s",
+                                    "WebSocket message JSON parse error "
+                                    "for device_no=%s: %s",
                                     device_no,
                                     err,
                                 )

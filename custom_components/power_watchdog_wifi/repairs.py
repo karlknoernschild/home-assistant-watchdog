@@ -49,7 +49,10 @@ def create_cannot_connect_issue(hass: HomeAssistant, entry_id: str) -> None:
 
 def create_device_mapping_unsupported_issue(hass: HomeAssistant, entry_id: str) -> None:
     """Create/refresh a mapping unsupported issue."""
-    _LOGGER.error("Creating device-mapping-unsupported repair issue for entry_id=%s", entry_id)
+    _LOGGER.error(
+        "Creating device-mapping-unsupported repair issue for entry_id=%s",
+        entry_id,
+    )
     ir.async_create_issue(
         hass,
         DOMAIN,
