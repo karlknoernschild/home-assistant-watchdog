@@ -7,6 +7,11 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## Unreleased
 
+## [0.4.1] - 2026-07-18
+
+### Fixed
+- Added local custom-integration brand assets under `custom_components/power_watchdog_wifi/brand/` so Home Assistant can render integration icon/logo from the brand image endpoint.
+
 ## [0.4.0] - 2026-07-18
 
 ### Added
