@@ -70,11 +70,9 @@ Availability behavior:
 
 ## Connection modes
 
-The integration supports two runtime connection modes (set in integration
-**Configure** options):
+The integration supports two runtime connection modes (set in integration **Configure** options):
 
-- **Polling** (default): open a short-lived WebSocket session every _n_ minutes,
-  ingest telemetry, then disconnect.
+- **Polling** (default): open a short-lived WebSocket session every _n_ minutes, ingest telemetry, then disconnect.
 - **Always on**: maintain a persistent WebSocket telemetry subscription.
 
 Why choose **Polling**:
@@ -107,39 +105,19 @@ Polling interval choices are:
 - 30 minutes
 - 60 minutes
 
-Default polling interval is **10 minutes**. Polling mode also uses bounded
-jitter to spread reconnect timing across installations.
+Default polling interval is **10 minutes**. Polling mode also uses bounded jitter to spread reconnect timing across installations.
 
 ## Logging
 
-This integration includes structured runtime logs for setup, authentication,
-WebSocket lifecycle, polling cycles, availability transitions, metadata refresh,
-and diagnostics-related counters.
+This integration includes structured runtime logs for setup, authentication, WebSocket lifecycle, polling cycles, availability transitions, metadata refresh, and diagnostics-related counters.
 
-You can configure verbosity in two ways:
-
-- Integration options (**Settings -> Devices & services -> Power Watchdog WiFi -> Configure**) using **Log level**:
-    - Inherit Home Assistant logger level (default)
-    - Debug
-    - Info
-    - Warning
-    - Error
-- Home Assistant logger configuration (for example `custom_components.power_watchdog_wifi`).
-
-Recommended usage:
-
-- Keep **Inherit** or **Warning** for normal operation.
-- Use **Debug** temporarily when troubleshooting connection/authentication issues.
-- Return to a higher level after troubleshooting to reduce log volume.
+To enable debug logging, use Home Assistant's built-in logger configuration. The simplest approach is the **Enable debug logging** button in the integration's diagnostic download dialog. Use debug logging temporarily when troubleshooting connection or authentication issues, then remove the override to return to normal log volume.
 
 ## Example dashboard
 
-An optional, sanitized example dashboard is available in
-[`examples/dashboard`](examples/dashboard).
+An optional, sanitized example dashboard is available in [`examples/dashboard`](examples/dashboard).
 
-It includes voltage, current, power, energy, frequency, and error-state cards
-using only entities supplied by this integration. Private device names and
-installation-specific environmental sensors are not included.
+It includes voltage, current, power, energy, frequency, and error-state cards using only entities supplied by this integration. Private device names and installation-specific environmental sensors are not included.
 
 The example requires these HACS frontend cards:
 
@@ -147,8 +125,7 @@ The example requires these HACS frontend cards:
 - ApexCharts Card
 - card-mod
 
-The example also requires an Input select helper with entity ID
-`input_select.graph_time_range` and these exact options:
+The example also requires an Input select helper with entity ID `input_select.graph_time_range` and these exact options:
 
 - 1 Hour
 - 3 Hours
@@ -158,14 +135,11 @@ The example also requires an Input select helper with entity ID
 - 3 Days
 - 7 Days
 
-You can create this helper in the UI or merge
-[`examples/dashboard/helpers.yaml`](examples/dashboard/helpers.yaml) into
-`configuration.yaml`.
+You can create this helper in the UI or merge [`examples/dashboard/helpers.yaml`](examples/dashboard/helpers.yaml) into `configuration.yaml`.
 
 ![Example Power Watchdog dashboard](examples/dashboard/dashboard.png)
 
-See [`examples/dashboard/README.md`](examples/dashboard/README.md) for helper
-setup, entity-prefix replacement, and import instructions.
+See [`examples/dashboard/README.md`](examples/dashboard/README.md) for helper setup, entity-prefix replacement, and import instructions.
 
 ## Diagnostics
 
@@ -177,10 +151,7 @@ When runtime failures occur, the integration creates Home Assistant Repairs issu
 
 ## Data path
 
-This integration authenticates against `api.watchdogsrv.com` and receives
-telemetry from `ws.watchdogsrv.com:5521` using WebSocket sessions. Depending on
-connection mode, those sessions are either persistent (**Always on**) or
-short-lived at a configurable interval (**Polling**).
+This integration authenticates against `api.watchdogsrv.com` and receives telemetry from `ws.watchdogsrv.com:5521` using WebSocket sessions. Depending on connection mode, those sessions are either persistent (**Always on**) or short-lived at a configurable interval (**Polling**).
 
 ## Notes
 
