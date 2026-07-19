@@ -23,7 +23,7 @@ from typing import Any
 from aiohttp import ClientError, ClientSession, ClientTimeout, WSMsgType
 
 from .const import API_BASE_URL, APP_DEVICE, APP_VERSION, WS_URL
-from .models import WatchdogTelemetryEvent
+from .models import WatchdogTelemetry, WatchdogTelemetryEvent
 from .protocol import ProtocolError, decode_report
 
 _LOGGER = logging.getLogger(__name__)
@@ -229,20 +229,26 @@ class ReadOnlyWatchdogClient:
                                 )
                                 continue
                             if decoded is not None:
-                                _LOGGER.debug(
-                                    (
-                                        "Telemetry packet decoded for device_no=%s "
-                                        "l1_v=%.1f l1_a=%.3f l1_w=%.1f "
-                                        "l2_v=%.1f l2_a=%.3f l2_w=%.1f"
-                                    ),
-                                    device_no,
-                                    decoded.leg1.voltage_v,
-                                    decoded.leg1.current_a,
-                                    decoded.leg1.power_w,
-                                    decoded.leg2.voltage_v,
-                                    decoded.leg2.current_a,
-                                    decoded.leg2.power_w,
-                                )
+                                if isinstance(decoded, WatchdogTelemetry):
+                                    _LOGGER.debug(
+                                        (
+                                            "Telemetry packet decoded for device_no=%s "
+                                            "l1_v=%.1f l1_a=%.3f l1_w=%.1f "
+                                            "l2_v=%.1f l2_a=%.3f l2_w=%.1f"
+                                        ),
+                                        device_no,
+                                        decoded.leg1.voltage_v,
+                                        decoded.leg1.current_a,
+                                        decoded.leg1.power_w,
+                                        decoded.leg2.voltage_v,
+                                        decoded.leg2.current_a,
+                                        decoded.leg2.power_w,
+                                    )
+                                else:
+                                    _LOGGER.debug(
+                                        "Telemetry packet decoded for device_no=%s",
+                                        device_no,
+                                    )
                                 yield WatchdogTelemetryEvent(telemetry=decoded)
 
                         elif message.type in {
