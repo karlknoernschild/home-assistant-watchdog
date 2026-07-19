@@ -64,8 +64,51 @@ Derived metrics behavior:
 
 Availability behavior:
 
-- Entities become unavailable when no valid telemetry is received for 120 seconds.
+- In **Always on** mode, entities become unavailable when no valid telemetry is received for 120 seconds.
+- In **Polling** mode, availability timeout is extended to avoid flapping between poll cycles.
 - Availability is restored automatically when valid telemetry resumes.
+
+## Connection modes
+
+The integration supports two runtime connection modes (set in integration
+**Configure** options):
+
+- **Polling** (default): open a short-lived WebSocket session every _n_ minutes,
+  ingest telemetry, then disconnect.
+- **Always on**: maintain a persistent WebSocket telemetry subscription.
+
+Why choose **Polling**:
+
+- Reduces 24/7 persistent cloud connections from always-running Home Assistant servers.
+- Better matches users who only need periodic updates for dashboards and trend views.
+- Lowers aggregate concurrent connection pressure as adoption grows.
+- Uses bounded jitter to spread reconnect timing and reduce synchronized bursts.
+
+Why choose **Always on**:
+
+- Best for near real-time automations and alerting.
+- Produces the most complete high-resolution history.
+- Minimizes freshness delay between cloud updates and Home Assistant state.
+
+Tradeoffs to consider:
+
+- **Polling** reduces connection time but can miss short-lived events between polls.
+- **Always on** gives best responsiveness but keeps a continuous cloud session active.
+- If you are concerned about provider-side connection load or long-lived sessions,
+  prefer **Polling** with a moderate interval (default: 10 minutes).
+
+Polling interval choices are:
+
+- 1 minute
+- 2 minutes
+- 5 minutes
+- 10 minutes
+- 15 minutes
+- 30 minutes
+- 60 minutes
+
+Default polling interval is **10 minutes**. Polling mode also uses bounded
+jitter to spread reconnect timing across installations.
 
 ## Example dashboard
 
@@ -112,7 +155,10 @@ When runtime failures occur, the integration creates Home Assistant Repairs issu
 
 ## Data path
 
-This is a cloud-push integration. It authenticates against `api.watchdogsrv.com` and receives telemetry from `ws.watchdogsrv.com:5521`.
+This integration authenticates against `api.watchdogsrv.com` and receives
+telemetry from `ws.watchdogsrv.com:5521` using WebSocket sessions. Depending on
+connection mode, those sessions are either persistent (**Always on**) or
+short-lived at a configurable interval (**Polling**).
 
 ## Notes
 

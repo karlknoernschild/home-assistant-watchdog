@@ -25,6 +25,18 @@
       "already_configured": "This Power Watchdog is already configured"
     }
   },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Connection settings",
+        "description": "Choose how the integration connects to Power Watchdog cloud telemetry.",
+        "data": {
+          "connection_mode": "Connection mode",
+          "poll_interval_minutes": "Polling interval"
+        }
+      }
+    }
+  },
   "entity": {
     "sensor": {
       "l1_voltage": {

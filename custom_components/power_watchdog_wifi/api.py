@@ -121,75 +121,87 @@ class ReadOnlyWatchdogClient:
         device_no: str,
     ) -> AsyncIterator[WatchdogTelemetryEvent]:
         """Yield live telemetry from a read-only cloud subscription."""
-        if not self._token:
-            await self.async_login()
-        assert self._token is not None
+        for attempt in range(2):
+            if not self._token:
+                await self.async_login()
+            assert self._token is not None
 
-        try:
-            async with self._session.ws_connect(
-                WS_URL,
-                heartbeat=30,
-                timeout=ClientTimeout(total=30),
-            ) as websocket:
-                await websocket.send_json(
-                    {
-                        "act": "login",
-                        "req": str(int(time.time() * 1000)),
-                        "data": {"token": self._token},
-                    }
-                )
-                subscribed = False
+            try:
+                async with self._session.ws_connect(
+                    WS_URL,
+                    heartbeat=30,
+                    timeout=ClientTimeout(total=30),
+                ) as websocket:
+                    await websocket.send_json(
+                        {
+                            "act": "login",
+                            "req": str(int(time.time() * 1000)),
+                            "data": {"token": self._token},
+                        }
+                    )
+                    subscribed = False
 
-                async for message in websocket:
-                    if message.type == WSMsgType.TEXT:
-                        try:
-                            payload = json.loads(message.data)
-                        except (json.JSONDecodeError, TypeError):
-                            continue
+                    async for message in websocket:
+                        if message.type == WSMsgType.TEXT:
+                            try:
+                                payload = json.loads(message.data)
+                            except (json.JSONDecodeError, TypeError):
+                                continue
 
-                        action = payload.get("act")
-                        if action == "login" and not subscribed:
-                            if payload.get("data", {}).get("res") != 1:
-                                raise WatchdogAuthError("WebSocket login rejected")
-                            await websocket.send_json(
-                                {
-                                    "act": "subscribe",
-                                    "req": str(int(time.time() * 1000)),
-                                    "gid": device_no,
-                                }
-                            )
-                            subscribed = True
-                            continue
+                            action = payload.get("act")
+                            if action == "login" and not subscribed:
+                                if payload.get("data", {}).get("res") != 1:
+                                    # Retry once with a fresh token when the
+                                    # cached token is no longer accepted.
+                                    if attempt == 0:
+                                        self._token = None
+                                        break
+                                    raise WatchdogAuthError("WebSocket login rejected")
+                                await websocket.send_json(
+                                    {
+                                        "act": "subscribe",
+                                        "req": str(int(time.time() * 1000)),
+                                        "gid": device_no,
+                                    }
+                                )
+                                subscribed = True
+                                continue
 
-                        # We intentionally ignore non-report actions here; those
-                        # frames are control/keepalive noise for telemetry flow.
-                        if action != "report":
-                            continue
+                            # We intentionally ignore non-report actions here; those
+                            # frames are control/keepalive noise for telemetry flow.
+                            if action != "report":
+                                continue
 
-                        packet = payload.get("data", {}).get("data")
-                        if not isinstance(packet, str):
-                            continue
-                        try:
-                            decoded = decode_report(packet)
-                        except ProtocolError:
-                            # Decode errors are surfaced as explicit events so
-                            # coordinator counters/diagnostics can track them.
-                            yield WatchdogTelemetryEvent(
-                                telemetry=None,
-                                decode_error=True,
-                            )
-                            continue
-                        if decoded is not None:
-                            yield WatchdogTelemetryEvent(telemetry=decoded)
+                            packet = payload.get("data", {}).get("data")
+                            if not isinstance(packet, str):
+                                continue
+                            try:
+                                decoded = decode_report(packet)
+                            except ProtocolError:
+                                # Decode errors are surfaced as explicit events so
+                                # coordinator counters/diagnostics can track them.
+                                yield WatchdogTelemetryEvent(
+                                    telemetry=None,
+                                    decode_error=True,
+                                )
+                                continue
+                            if decoded is not None:
+                                yield WatchdogTelemetryEvent(telemetry=decoded)
 
-                    elif message.type in {
-                        WSMsgType.CLOSED,
-                        WSMsgType.CLOSE,
-                        WSMsgType.CLOSING,
-                        WSMsgType.ERROR,
-                    }:
-                        break
-        except WatchdogError:
-            raise
-        except (TimeoutError, ClientError) as err:
-            raise WatchdogConnectionError("Telemetry connection failed") from err
+                        elif message.type in {
+                            WSMsgType.CLOSED,
+                            WSMsgType.CLOSE,
+                            WSMsgType.CLOSING,
+                            WSMsgType.ERROR,
+                        }:
+                            break
+                    else:
+                        continue
+
+                    if attempt == 0 and self._token is None:
+                        continue
+                    return
+            except WatchdogError:
+                raise
+            except (TimeoutError, ClientError) as err:
+                raise WatchdogConnectionError("Telemetry connection failed") from err

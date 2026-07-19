@@ -12,7 +12,9 @@ It combines multiple concerns in one place so entities can stay thin:
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import logging
+import random
 from collections import deque
 from contextlib import suppress
 from dataclasses import replace
@@ -26,12 +28,21 @@ from homeassistant.util import dt as dt_util
 
 from .api import ReadOnlyWatchdogClient, WatchdogAuthError, WatchdogConnectionError
 from .const import (
+    CONNECTION_MODE_ALWAYS_ON,
+    CONNECTION_MODE_POLLING,
+    CONNECTION_MODES,
+    DEFAULT_CONNECTION_MODE,
+    DEFAULT_POLL_INTERVAL_MINUTES,
     DERIVED_ENERGY_STATE_PERSIST_INTERVAL_SECONDS,
     DERIVED_ENERGY_STORAGE_KEY,
     DERIVED_ENERGY_STORAGE_VERSION,
     DERIVED_ROLLING_POWER_WINDOW_SECONDS,
     DEVICE_METADATA_REFRESH_INTERVAL_SECONDS,
     DOMAIN,
+    POLL_CAPTURE_TIMEOUT_SECONDS,
+    POLL_INTERVAL_MINUTES_ALLOWED,
+    POLL_JITTER_MAX_SECONDS,
+    POLL_JITTER_RATIO,
     TELEMETRY_AVAILABILITY_TIMEOUT_SECONDS,
     WS_RECONNECT_MAX_SECONDS,
     WS_RECONNECT_MIN_SECONDS,
@@ -89,6 +100,9 @@ class WatchdogCoordinator(DataUpdateCoordinator[WatchdogSnapshot]):
         self._last_derived_state_persist_timestamp: datetime | None = None
         self._rolling_power_values: deque[tuple[datetime, float]] = deque()
         self._timed_out = False
+        self._connection_mode = DEFAULT_CONNECTION_MODE
+        self._poll_interval_minutes = DEFAULT_POLL_INTERVAL_MINUTES
+        self._poll_capture_timeout_seconds = POLL_CAPTURE_TIMEOUT_SECONDS
         now = dt_util.utcnow()
         self.data = WatchdogSnapshot(
             device_metadata=initial_device_metadata,
@@ -96,6 +110,15 @@ class WatchdogCoordinator(DataUpdateCoordinator[WatchdogSnapshot]):
                 now if initial_device_metadata is not None else None
             ),
         )
+
+    def configure_connection(self, mode: str, poll_interval_minutes: int) -> None:
+        """Set connection preferences from integration options."""
+        if mode not in CONNECTION_MODES:
+            mode = DEFAULT_CONNECTION_MODE
+        if poll_interval_minutes not in POLL_INTERVAL_MINUTES_ALLOWED:
+            poll_interval_minutes = DEFAULT_POLL_INTERVAL_MINUTES
+        self._connection_mode = mode
+        self._poll_interval_minutes = poll_interval_minutes
 
     async def async_start(self) -> None:
         """Start the push listener."""
@@ -146,6 +169,12 @@ class WatchdogCoordinator(DataUpdateCoordinator[WatchdogSnapshot]):
         return not self._timed_out
 
     async def _async_listen(self) -> None:
+        if self._connection_mode == CONNECTION_MODE_ALWAYS_ON:
+            await self._async_listen_always_on()
+            return
+        await self._async_listen_polling()
+
+    async def _async_listen_always_on(self) -> None:
         # Reconnect with exponential backoff; delay resets whenever a valid
         # packet is processed.
         delay = WS_RECONNECT_MIN_SECONDS
@@ -244,6 +273,106 @@ class WatchdogCoordinator(DataUpdateCoordinator[WatchdogSnapshot]):
             await asyncio.sleep(delay)
             delay = min(delay * 2, WS_RECONNECT_MAX_SECONDS)
 
+    async def _async_listen_polling(self) -> None:
+        """Capture telemetry in short WebSocket sessions on a fixed cadence."""
+        await asyncio.sleep(self._initial_poll_offset_seconds())
+        while True:
+            try:
+                await self._async_run_poll_cycle()
+            except asyncio.CancelledError:
+                raise
+            except Exception as err:  # pragma: no cover - hard safety guard
+                _LOGGER.warning("Unexpected polling loop error: %s", err)
+
+            await asyncio.sleep(self._next_poll_sleep_seconds())
+
+    async def _async_run_poll_cycle(self) -> None:
+        """Run one polling capture cycle."""
+        first_valid_packet = True
+        try:
+            async with asyncio.timeout(self._poll_capture_timeout_seconds):
+                async for event in self.client.async_telemetry(self.device_no):
+                    snapshot = self.data
+                    packet_count = snapshot.packet_count + 1
+                    decode_error_count = snapshot.decode_error_count + int(
+                        event.decode_error
+                    )
+                    reconnect_count = snapshot.reconnect_count
+                    last_successful_connect_timestamp = (
+                        snapshot.last_successful_connect_timestamp
+                    )
+
+                    if event.telemetry is not None and first_valid_packet:
+                        if last_successful_connect_timestamp is not None:
+                            reconnect_count += 1
+                        last_successful_connect_timestamp = dt_util.utcnow()
+                        first_valid_packet = False
+                        await self._async_refresh_device_metadata(force=True)
+
+                    if event.telemetry is not None:
+                        clear_runtime_issues(self.hass, self.config_entry.entry_id)
+                        now = dt_util.utcnow()
+                        (
+                            derived_today_energy_kwh,
+                            derived_yesterday_energy_kwh,
+                            derived_rolling_average_power_w,
+                        ) = self._update_derived_metrics(event.telemetry, now)
+                        await self._async_maybe_persist_derived_energy_state(
+                            force=False
+                        )
+                        self._timed_out = False
+                        self.async_set_updated_data(
+                            replace(
+                                self.data,
+                                latest_telemetry=event.telemetry,
+                                last_telemetry_timestamp=now,
+                                reconnect_count=reconnect_count,
+                                decode_error_count=decode_error_count,
+                                packet_count=packet_count,
+                                last_connection_error=None,
+                                last_successful_connect_timestamp=(
+                                    last_successful_connect_timestamp
+                                ),
+                                derived_today_energy_kwh=derived_today_energy_kwh,
+                                derived_yesterday_energy_kwh=(
+                                    derived_yesterday_energy_kwh
+                                ),
+                                derived_rolling_average_power_w=(
+                                    derived_rolling_average_power_w
+                                ),
+                            )
+                        )
+                        return
+
+                    self.async_set_updated_data(
+                        replace(
+                            self.data,
+                            reconnect_count=reconnect_count,
+                            decode_error_count=decode_error_count,
+                            packet_count=packet_count,
+                            last_successful_connect_timestamp=(
+                                last_successful_connect_timestamp
+                            ),
+                        )
+                    )
+        except asyncio.TimeoutError:
+            # Poll cycle ended without a valid packet; keep previous state.
+            return
+        except WatchdogAuthError:
+            _LOGGER.error("Power Watchdog authentication failed")
+            create_auth_failed_issue(self.hass, self.config_entry.entry_id)
+            self.async_set_update_error(WatchdogAuthError("Authentication failed"))
+            raise asyncio.CancelledError
+        except WatchdogConnectionError as err:
+            create_cannot_connect_issue(self.hass, self.config_entry.entry_id)
+            snapshot = self.data
+            self.async_set_updated_data(
+                replace(
+                    snapshot,
+                    last_connection_error=str(err),
+                )
+            )
+
     async def _async_track_availability_timeout(self) -> None:
         """Track timeout-based availability for telemetry."""
         while True:
@@ -253,11 +382,32 @@ class WatchdogCoordinator(DataUpdateCoordinator[WatchdogSnapshot]):
             timed_out = (
                 last_telemetry_timestamp is not None
                 and dt_util.utcnow() - last_telemetry_timestamp
-                > self._availability_timeout
+                > self._effective_availability_timeout()
             )
             if timed_out != self._timed_out:
                 self._timed_out = timed_out
                 self.async_update_listeners()
+
+    def _effective_availability_timeout(self) -> timedelta:
+        """Return mode-aware availability timeout."""
+        if self._connection_mode == CONNECTION_MODE_POLLING:
+            polling_timeout = timedelta(minutes=self._poll_interval_minutes * 3)
+            return max(self._availability_timeout, polling_timeout)
+        return self._availability_timeout
+
+    def _initial_poll_offset_seconds(self) -> float:
+        """Spread polling start times deterministically across devices."""
+        base_window = min(self._poll_interval_minutes * 60, POLL_JITTER_MAX_SECONDS)
+        seed = f"{self.device_no}:{self.config_entry.entry_id}"
+        digest = hashlib.sha256(seed.encode("utf-8")).hexdigest()
+        return float(int(digest, 16) % max(1, base_window))
+
+    def _next_poll_sleep_seconds(self) -> float:
+        """Return next polling sleep interval with bounded jitter."""
+        base_seconds = self._poll_interval_minutes * 60
+        jitter_range = min(base_seconds * POLL_JITTER_RATIO, POLL_JITTER_MAX_SECONDS)
+        jitter = random.uniform(-jitter_range, jitter_range)
+        return max(1.0, base_seconds + jitter)
 
     async def _async_refresh_metadata_periodic(self) -> None:
         """Refresh metadata on a bounded interval."""

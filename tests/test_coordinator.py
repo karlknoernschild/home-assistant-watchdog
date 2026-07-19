@@ -125,6 +125,7 @@ _load_module(
     "power_watchdog_wifi.const",
     ROOT / "custom_components" / "power_watchdog_wifi" / "const.py",
 )
+const_mod = sys.modules["power_watchdog_wifi.const"]
 models = _load_module(
     "power_watchdog_wifi.models",
     ROOT / "custom_components" / "power_watchdog_wifi" / "models.py",
@@ -167,6 +168,7 @@ def test_listen_updates_reconnect_and_timeout_recovery() -> None:
         initial_device_metadata=None,
     )
     coordinator.config_entry = types.SimpleNamespace(entry_id="entry-1")
+    coordinator.configure_connection(const_mod.CONNECTION_MODE_ALWAYS_ON, 10)
     coordinator._timed_out = True
 
     async def _run():

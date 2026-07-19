@@ -6,7 +6,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
-- Updated README.md with additional details
+### Added
+- Integration options for connection mode: `Polling` (default) or `Always on`.
+- Configurable polling interval options: 1, 2, 5, 10, 15, 30, or 60 minutes.
+- Focused API test coverage for WebSocket token rejection and one-time re-auth retry.
+
+### Changed
+- Updated README with connection-mode behavior, polling defaults/intervals, jitter notes, and dashboard helper requirements.
+- Coordinator runtime supports short-lived jittered polling sessions in polling mode.
+- Availability timeout is mode-aware to reduce entity flapping between polling cycles.
+- Integration now reloads automatically when connection options are changed.
+
+### Fixed
+- WebSocket telemetry now clears stale auth tokens, re-authenticates, and retries once when server-side token login is rejected.
 
 ## [0.3.1] - 2026-07-18
 

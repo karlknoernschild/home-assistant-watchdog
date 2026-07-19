@@ -20,15 +20,23 @@ from .api import ReadOnlyWatchdogClient, WatchdogAuthError, WatchdogConnectionEr
 from .config_flow_helpers import build_device_options, find_device_by_device_no
 from .const import (
     CONF_ACCOUNT,
+    CONF_CONNECTION_MODE,
     CONF_CONNECT_TYPE,
     CONF_DEVICE_ID,
     CONF_DEVICE_NAME,
     CONF_DEVICE_NO,
     CONF_FIRMWARE,
     CONF_MCU_FIRMWARE,
+    CONF_POLL_INTERVAL_MINUTES,
     CONF_SOCKET_STATE,
     CONF_START_FROM,
+    CONNECTION_MODE_ALWAYS_ON,
+    CONNECTION_MODE_POLLING,
+    CONNECTION_MODES,
+    DEFAULT_CONNECTION_MODE,
+    DEFAULT_POLL_INTERVAL_MINUTES,
     DOMAIN,
+    POLL_INTERVAL_MINUTES_ALLOWED,
 )
 
 
@@ -36,6 +44,13 @@ class PowerWatchdogConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a Power Watchdog WiFi config flow."""
 
     VERSION = 1
+
+    @staticmethod
+    def async_get_options_flow(
+        config_entry: config_entries.ConfigEntry,
+    ) -> PowerWatchdogOptionsFlow:
+        """Return options flow for this handler."""
+        return PowerWatchdogOptionsFlow(config_entry)
 
     def __init__(self) -> None:
         self._account = ""
@@ -120,4 +135,69 @@ class PowerWatchdogConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 CONF_SOCKET_STATE: device.get("socket_state"),
                 CONF_START_FROM: device.get("start_from"),
             },
+        )
+
+
+class PowerWatchdogOptionsFlow(config_entries.OptionsFlow):
+    """Handle Power Watchdog WiFi options."""
+
+    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
+        self._config_entry = config_entry
+
+    async def async_step_init(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> FlowResult:
+        """Manage integration options."""
+        if user_input is not None:
+            mode = str(user_input[CONF_CONNECTION_MODE])
+            interval = int(user_input[CONF_POLL_INTERVAL_MINUTES])
+            return self.async_create_entry(
+                title="",
+                data={
+                    CONF_CONNECTION_MODE: mode,
+                    CONF_POLL_INTERVAL_MINUTES: interval,
+                },
+            )
+
+        current_mode = str(
+            self._config_entry.options.get(
+                CONF_CONNECTION_MODE,
+                DEFAULT_CONNECTION_MODE,
+            )
+        )
+        if current_mode not in CONNECTION_MODES:
+            current_mode = DEFAULT_CONNECTION_MODE
+
+        current_interval = int(
+            self._config_entry.options.get(
+                CONF_POLL_INTERVAL_MINUTES,
+                DEFAULT_POLL_INTERVAL_MINUTES,
+            )
+        )
+        if current_interval not in POLL_INTERVAL_MINUTES_ALLOWED:
+            current_interval = DEFAULT_POLL_INTERVAL_MINUTES
+
+        mode_options = {
+            CONNECTION_MODE_POLLING: "Polling",
+            CONNECTION_MODE_ALWAYS_ON: "Always on",
+        }
+        interval_options = {
+            value: f"Every {value} minute{'s' if value != 1 else ''}"
+            for value in POLL_INTERVAL_MINUTES_ALLOWED
+        }
+
+        return self.async_show_form(
+            step_id="init",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_CONNECTION_MODE, default=current_mode): vol.In(
+                        mode_options
+                    ),
+                    vol.Required(
+                        CONF_POLL_INTERVAL_MINUTES,
+                        default=current_interval,
+                    ): vol.In(interval_options),
+                }
+            ),
         )

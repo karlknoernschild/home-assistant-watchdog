@@ -13,14 +13,18 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from .api import ReadOnlyWatchdogClient, WatchdogAuthError, WatchdogConnectionError
 from .const import (
     CONF_ACCOUNT,
+    CONF_CONNECTION_MODE,
     CONF_CONNECT_TYPE,
     CONF_DEVICE_ID,
     CONF_DEVICE_NAME,
     CONF_DEVICE_NO,
     CONF_FIRMWARE,
     CONF_MCU_FIRMWARE,
+    CONF_POLL_INTERVAL_MINUTES,
     CONF_SOCKET_STATE,
     CONF_START_FROM,
+    DEFAULT_CONNECTION_MODE,
+    DEFAULT_POLL_INTERVAL_MINUTES,
     PLATFORMS,
 )
 from .coordinator import WatchdogCoordinator
@@ -86,7 +90,12 @@ async def async_setup_entry(
     metadata = metadata_from_device_row(device_no, device)
     coordinator = WatchdogCoordinator(hass, client, device_no, metadata)
     coordinator.config_entry = entry
+    coordinator.configure_connection(
+        str(entry.options.get(CONF_CONNECTION_MODE, DEFAULT_CONNECTION_MODE)),
+        int(entry.options.get(CONF_POLL_INTERVAL_MINUTES, DEFAULT_POLL_INTERVAL_MINUTES)),
+    )
     entry.runtime_data = WatchdogRuntimeData(client, coordinator)
+    entry.async_on_unload(entry.add_update_listener(_async_update_listener))
 
     # Keep stored config-entry metadata aligned with current cloud metadata so
     # device registry fields stay accurate across reloads/restarts.
@@ -115,3 +124,8 @@ async def async_unload_entry(
     """Unload a config entry."""
     await entry.runtime_data.coordinator.async_stop()
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+
+
+async def _async_update_listener(hass: HomeAssistant, entry: WatchdogConfigEntry) -> None:
+    """Reload config entry when options change."""
+    await hass.config_entries.async_reload(entry.entry_id)
