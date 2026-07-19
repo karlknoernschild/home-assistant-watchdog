@@ -7,6 +7,8 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## Unreleased
 
+## [0.5.1] - 2026-07-18
+
 ### Changed
 - Updated logger information in README.md
 - Fixed icon scaling
