@@ -163,7 +163,12 @@ class ReadOnlyWatchdogClient:
                         if message.type == WSMsgType.TEXT:
                             try:
                                 payload = json.loads(message.data)
-                            except (json.JSONDecodeError, TypeError):
+                            except (json.JSONDecodeError, TypeError) as err:
+                                _LOGGER.debug(
+                                    "WebSocket message JSON parse error for device_no=%s: %s",
+                                    device_no,
+                                    err,
+                                )
                                 continue
 
                             action = payload.get("act")
@@ -198,6 +203,11 @@ class ReadOnlyWatchdogClient:
                             # We intentionally ignore non-report actions here; those
                             # frames are control/keepalive noise for telemetry flow.
                             if action != "report":
+                                _LOGGER.debug(
+                                    "Ignoring non-report frame action=%s device_no=%s",
+                                    action,
+                                    device_no,
+                                )
                                 continue
 
                             packet = payload.get("data", {}).get("data")
@@ -205,11 +215,13 @@ class ReadOnlyWatchdogClient:
                                 continue
                             try:
                                 decoded = decode_report(packet)
-                            except ProtocolError:
+                            except ProtocolError as err:
                                 # Decode errors are surfaced as explicit events so
                                 # coordinator counters/diagnostics can track them.
                                 _LOGGER.debug(
-                                    "Telemetry decode error for device_no=%s", device_no
+                                    "Telemetry decode error for device_no=%s: %s",
+                                    device_no,
+                                    err,
                                 )
                                 yield WatchdogTelemetryEvent(
                                     telemetry=None,
@@ -218,8 +230,18 @@ class ReadOnlyWatchdogClient:
                                 continue
                             if decoded is not None:
                                 _LOGGER.debug(
-                                    "Telemetry packet decoded for device_no=%s",
+                                    (
+                                        "Telemetry packet decoded for device_no=%s "
+                                        "l1_v=%.1f l1_a=%.3f l1_w=%.1f "
+                                        "l2_v=%.1f l2_a=%.3f l2_w=%.1f"
+                                    ),
                                     device_no,
+                                    decoded.leg1.voltage_v,
+                                    decoded.leg1.current_a,
+                                    decoded.leg1.power_w,
+                                    decoded.leg2.voltage_v,
+                                    decoded.leg2.current_a,
+                                    decoded.leg2.power_w,
                                 )
                                 yield WatchdogTelemetryEvent(telemetry=decoded)
 
@@ -229,6 +251,11 @@ class ReadOnlyWatchdogClient:
                             WSMsgType.CLOSING,
                             WSMsgType.ERROR,
                         }:
+                            _LOGGER.debug(
+                                "WebSocket closed/error for device_no=%s type=%s",
+                                device_no,
+                                message.type,
+                            )
                             break
                     else:
                         continue

@@ -330,7 +330,7 @@ class WatchdogCoordinator(DataUpdateCoordinator[WatchdogSnapshot]):
             except asyncio.CancelledError:
                 raise
             except Exception as err:  # pragma: no cover - hard safety guard
-                _LOGGER.warning("Unexpected polling loop error: %s", err)
+                _LOGGER.warning("Unexpected polling loop error: %s", err, exc_info=True)
 
             sleep_seconds = self._next_poll_sleep_seconds()
             _LOGGER.debug(

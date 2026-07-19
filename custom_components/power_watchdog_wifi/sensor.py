@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Callable
 from dataclasses import dataclass
 
@@ -24,6 +25,8 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from . import WatchdogConfigEntry
 from .entity import WatchdogEntity
 from .models import WatchdogSnapshot
+
+_LOGGER = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -230,6 +233,11 @@ async def async_setup_entry(
 ) -> None:
     """Set up Power Watchdog sensors."""
     coordinator = entry.runtime_data.coordinator
+    _LOGGER.debug(
+        "Setting up %s sensor entities for device_no=%s",
+        len(SENSORS),
+        coordinator.device_no,
+    )
     async_add_entities(
         WatchdogSensor(entry, coordinator, description) for description in SENSORS
     )

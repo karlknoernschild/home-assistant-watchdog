@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+import logging
+
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import issue_registry as ir
 
 from .const import DOMAIN
+
+_LOGGER = logging.getLogger(__name__)
 
 ISSUE_AUTH_FAILED = "auth_failed"
 ISSUE_CANNOT_CONNECT = "cannot_connect"
@@ -19,6 +23,7 @@ def _issue_id(entry_id: str, issue_key: str) -> str:
 
 def create_auth_failed_issue(hass: HomeAssistant, entry_id: str) -> None:
     """Create/refresh an authentication issue."""
+    _LOGGER.warning("Creating auth-failed repair issue for entry_id=%s", entry_id)
     ir.async_create_issue(
         hass,
         DOMAIN,
@@ -31,6 +36,7 @@ def create_auth_failed_issue(hass: HomeAssistant, entry_id: str) -> None:
 
 def create_cannot_connect_issue(hass: HomeAssistant, entry_id: str) -> None:
     """Create/refresh a connectivity issue."""
+    _LOGGER.warning("Creating cannot-connect repair issue for entry_id=%s", entry_id)
     ir.async_create_issue(
         hass,
         DOMAIN,
@@ -43,6 +49,7 @@ def create_cannot_connect_issue(hass: HomeAssistant, entry_id: str) -> None:
 
 def create_device_mapping_unsupported_issue(hass: HomeAssistant, entry_id: str) -> None:
     """Create/refresh a mapping unsupported issue."""
+    _LOGGER.error("Creating device-mapping-unsupported repair issue for entry_id=%s", entry_id)
     ir.async_create_issue(
         hass,
         DOMAIN,
@@ -55,6 +62,7 @@ def create_device_mapping_unsupported_issue(hass: HomeAssistant, entry_id: str) 
 
 def clear_issue(hass: HomeAssistant, entry_id: str, issue_key: str) -> None:
     """Clear one issue for a config entry."""
+    _LOGGER.debug("Clearing repair issue %s for entry_id=%s", issue_key, entry_id)
     ir.async_delete_issue(hass, DOMAIN, _issue_id(entry_id, issue_key))
 
 

@@ -20,19 +20,16 @@ from .const import (
     CONF_DEVICE_NAME,
     CONF_DEVICE_NO,
     CONF_FIRMWARE,
-    CONF_LOG_LEVEL,
     CONF_MCU_FIRMWARE,
     CONF_POLL_INTERVAL_MINUTES,
     CONF_SOCKET_STATE,
     CONF_START_FROM,
     DEFAULT_CONNECTION_MODE,
-    DEFAULT_LOG_LEVEL,
     DEFAULT_POLL_INTERVAL_MINUTES,
     DOMAIN,
     PLATFORMS,
 )
 from .coordinator import WatchdogCoordinator
-from .logging_utils import apply_package_log_level
 from .models import metadata_from_device_row
 from .repairs import (
     ISSUE_DEVICE_MAPPING_UNSUPPORTED,
@@ -62,20 +59,16 @@ async def async_setup_entry(
     entry: WatchdogConfigEntry,
 ) -> bool:
     """Set up Power Watchdog WiFi from a config entry."""
-    applied_log_level = apply_package_log_level(
-        str(entry.options.get(CONF_LOG_LEVEL, DEFAULT_LOG_LEVEL))
-    )
     _LOGGER.info(
         (
             "Setting up %s entry_id=%s device_no=%s connection_mode=%s "
-            "poll_interval=%s min log_level=%s"
+            "poll_interval=%s min"
         ),
         DOMAIN,
         entry.entry_id,
         entry.data.get(CONF_DEVICE_NO, "unknown"),
         entry.options.get(CONF_CONNECTION_MODE, DEFAULT_CONNECTION_MODE),
         entry.options.get(CONF_POLL_INTERVAL_MINUTES, DEFAULT_POLL_INTERVAL_MINUTES),
-        applied_log_level,
     )
 
     # Setup is intentionally front-loaded with a device-list check so we can
@@ -176,5 +169,4 @@ async def _async_update_listener(
 ) -> None:
     """Reload config entry when options change."""
     _LOGGER.info("Options updated; reloading entry_id=%s", entry.entry_id)
-    apply_package_log_level(str(entry.options.get(CONF_LOG_LEVEL, DEFAULT_LOG_LEVEL)))
     await hass.config_entries.async_reload(entry.entry_id)
