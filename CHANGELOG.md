@@ -7,8 +7,20 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## Unreleased
 
+### Added
+- Debug log messages now include rich detail: decoded telemetry values (L1/L2 voltage, current, power), WebSocket frame action names, WS close/error message types, and ProtocolError descriptions.
+- Logging added to `repairs.py` — issue creation and clearing events are now visible in HA logs.
+- Logging added to `sensor.py` and `binary_sensor.py` `async_setup_entry` to confirm platform entity registration at debug level.
+
+### Changed
+- Removed the custom log-level integration option. Use HA's built-in **Enable debug logging** button or `logger:` in `configuration.yaml` instead.
+- The integration no longer overrides HA's own logger configuration on startup; setting the integration log level option to `inherit` previously cleared any level set via `configuration.yaml`.
+- WebSocket JSON parse errors are now logged at debug level instead of being silently swallowed.
+- Unexpected errors in the polling loop now include a full traceback in the warning log.
+
 ## [0.4.2] - 2026-07-18
 
+- Updated icon
 
 ## [0.4.1] - 2026-07-18
 
